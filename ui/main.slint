@@ -1,0 +1,47 @@
+import { Button, VerticalBox } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    callback request-pdf-dir();
+    callback request-csv-file();
+    callback generate();
+    preferred-width: 200px;
+    preferred-height: 400px;
+    in-out property <string> csv: "";
+    in-out property <string> pdfs: "";
+
+    VerticalBox {
+        Text {
+            height:20px;
+            text: "PDF Ordner: " + pdfs;
+        }
+        Button {
+            height:60px;
+            text: "PDF Ordner wählen";
+            clicked => {
+                root.request-pdf-dir();
+            }
+        }
+        Text {
+            height:20px;
+            text: "Buchungsstapel: " + csv;
+        }
+        Button {
+            height:60px;
+            text: "Buchungsstapel.csv wählen";
+            clicked => {
+                root.request-csv-file();
+            }
+        }
+        Text {
+            height: 30px;
+        }
+        Button {
+                height:60px;
+                text: "Importdateien generieren";
+                clicked => {
+                    root.generate();
+                }
+            }
+
+    }
+}

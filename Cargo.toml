@@ -12,6 +12,7 @@ encoding_rs = "0.8.35"
 encoding_rs_io = "0.1"
 slint = "1.16.0"
 native-dialog = "0.9.6"
+zip = "0.6"
 
 [build-dependencies]
 slint-build = "1.16.0"

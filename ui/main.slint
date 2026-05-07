@@ -1,47 +1,139 @@
-import { Button, VerticalBox } from "std-widgets.slint";
+import { Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox } from "std-widgets.slint";
+struct MatchedPattern {
+    before: string,
+    matched: string,
+    after: string,
+    partner: bool
+}
 
-export component AppWindow inherits Window {
-    callback request-pdf-dir();
-    callback request-csv-file();
-    callback generate();
-    preferred-width: 200px;
-    preferred-height: 400px;
+// In AppState:
+export global AppState {
     in-out property <string> csv: "";
     in-out property <string> pdfs: "";
+    in-out property <int> current-view: 0;
+
+    in-out property <[MatchedPattern]> csv-names;
+    in-out property <[MatchedPattern]> pdf-names;
+}
+
+component FileSelect inherits Rectangle  {
+    callback request-pdf-dir();
+    callback request-csv-file();
+    callback get_names();
 
     VerticalBox {
         Text {
             height:20px;
-            text: "PDF Ordner: " + pdfs;
+            text: "PDF Ordner: " + AppState.pdfs;
         }
+
         Button {
             height:60px;
             text: "PDF Ordner wählen";
             clicked => {
-                root.request-pdf-dir();
+                request-pdf-dir();
             }
         }
         Text {
             height:20px;
-            text: "Buchungsstapel: " + csv;
+            text: "Buchungsstapel: " + AppState.csv;
         }
         Button {
             height:60px;
             text: "Buchungsstapel.csv wählen";
             clicked => {
-                root.request-csv-file();
+                request-csv-file();
             }
         }
         Text {
             height: 30px;
         }
         Button {
-                height:60px;
-                text: "Importdateien generieren";
-                clicked => {
-                    root.generate();
+            height:60px;
+            text: "Weiter";
+            clicked => {
+                root.get-names();
+            }
+        }
+    }
+}
+
+
+component ChooseNamespace inherits Rectangle {
+    callback filter(string);
+    callback generate();
+    VerticalBox {
+        HorizontalBox {
+            LineEdit {
+                edited(text) => {filter(self.text)}
+                horizontal-alignment: TextHorizontalAlignment.center;
+                placeholder-text: "Filter";
+            }
+            Button {
+                clicked => {generate()}
+                text: "Weiter";
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 10px;
+            visible: true;
+            accessible-role: AccessibleRole.none;
+            alignment: LayoutAlignment.stretch;
+            padding: 10px;
+
+            ListView {
+                accessible-role: AccessibleRole.button;
+                for item in AppState.pdf-names: Rectangle {
+                    height: 40px;
+                    background: Colors.lightgrey;
+                    HorizontalLayout {
+                        alignment: LayoutAlignment.center;
+                        Text { text: item.before; color: Colors.black; }
+
+                       private property <color> c: item.partner ? Colors.green : Colors.blue;
+                        Text { text: item.matched; color: c; font-weight: 700; }
+                        Text { text: item.after; color: Colors.black; }
+                    }
                 }
             }
 
+            ListView {
+                for item in AppState.csv-names: Rectangle {
+                    height: 40px;
+                    background: Colors.lightgrey;
+                    HorizontalLayout {
+                        alignment: LayoutAlignment.center;
+                        Text { text: item.before; color: Colors.black; }
+
+                        private property <color> c: item.partner ? Colors.green : Colors.blue;
+                        Text { text: item.matched; color: c; font-weight: 700; }
+                        Text { text: item.after; color: Colors.black; }
+                    }
+                }
+            }
+        }
     }
+}
+
+export component AppWindow inherits Window {
+    preferred-width: 200px;
+    preferred-height: 400px;
+    callback request-pdf-dir();
+    callback request-csv-file();
+    callback generate();
+    callback get-names();
+    callback filter(string);
+
+    if AppState.current-view == 0: FileSelect {
+        request-pdf-dir => { root.request-pdf-dir(); }
+        request-csv-file => { root.request-csv-file(); }
+        get_names => { root.get-names(); }
+    }
+
+    if AppState.current-view == 1: ChooseNamespace{
+        filter(text) => { root.filter(text); }
+        generate() => {generate()}
+    }
+
 }

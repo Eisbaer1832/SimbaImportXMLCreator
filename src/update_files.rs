@@ -96,7 +96,6 @@ pub fn generate_xml(ids: Vec<String>, pdf_path: PathBuf, pattern: String) -> Res
     }
     writer.write_event(Event::End(BytesEnd::new("content")))?;
 
-
     //close archive
     writer.write_event(Event::End(BytesEnd::new("archive")))?;
     writer.into_inner().flush()?;

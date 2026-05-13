@@ -10,13 +10,17 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 slint::include_modules!();
-pub fn ui() {
+pub fn ui(pdf_directory: String, csv_file: String) {
+    println!("{}", pdf_directory);
     let ui = AppWindow::new().expect("Ouch, slint somehow didn't create the window");
-    let csv_path = Rc::new(RefCell::new(PathBuf::new()));
-    let pdf_dir = Rc::new(RefCell::new(PathBuf::new())); // had to use RefCell, to avoid ownership issues
+    let csv_path = Rc::new(RefCell::new(PathBuf::from(csv_file)));
+    let pdf_dir = Rc::new(RefCell::new(PathBuf::from(pdf_directory))); // had to use RefCell, to avoid ownership issues
     let all_pdf_names = Rc::new(RefCell::new(Vec::<String>::new()));
     let all_csv_names = Rc::new(RefCell::new(Vec::<String>::new()));
     let last_pattern = Rc::new(RefCell::new(String::new()));
+
+    AppState::get(&ui).set_csv(csv_path.borrow().display().to_shared_string());
+    AppState::get(&ui).set_pdfs(pdf_dir.borrow().display().to_shared_string());
 
     ui.on_request_csv_file({
         let ui_handle = ui.as_weak();

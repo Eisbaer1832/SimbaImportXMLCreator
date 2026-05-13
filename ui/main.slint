@@ -86,29 +86,31 @@ component ChooseNamespace inherits Rectangle {
                 accessible-role: AccessibleRole.button;
                 for item in AppState.pdf-names: Rectangle {
                     height: 40px;
-                    background: Colors.lightgrey;
                     HorizontalLayout {
                         alignment: LayoutAlignment.center;
-                        Text { text: item.before; color: Colors.black; }
+                        Text { text: item.before; color: Colors.white; }
 
                        private property <color> c: item.partner ? Colors.green : Colors.blue;
                         Text { text: item.matched; color: c; font-weight: 700; }
-                        Text { text: item.after; color: Colors.black; }
+                        Text { text: item.after; color: Colors.white; }
                     }
                 }
             }
 
+            Rectangle {
+                width: 1px;
+                background: #ccc;
+            }
             ListView {
                 for item in AppState.csv-names: Rectangle {
                     height: 40px;
-                    background: Colors.lightgrey;
                     HorizontalLayout {
                         alignment: LayoutAlignment.center;
-                        Text { text: item.before; color: Colors.black; }
+                        Text { text: item.before; color: Colors.white; }
 
                         private property <color> c: item.partner ? Colors.green : Colors.blue;
                         Text { text: item.matched; color: c; font-weight: 700; }
-                        Text { text: item.after; color: Colors.black; }
+                        Text { text: item.after; color: Colors.white; }
                     }
                 }
             }
@@ -135,5 +137,4 @@ export component AppWindow inherits Window {
         filter(text) => { root.filter(text); }
         generate() => {generate()}
     }
-
 }

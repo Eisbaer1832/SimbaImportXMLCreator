@@ -1,4 +1,5 @@
-import { Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox } from "std-widgets.slint";
+import { ComboBox, Palette, Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox } from "std-widgets.slint";
+
 struct MatchedPattern {
     before: string,
     matched: string,
@@ -22,34 +23,83 @@ component FileSelect inherits Rectangle  {
     callback get_names();
 
     VerticalBox {
-        Text {
-            height:20px;
-            text: "PDF Ordner: " + AppState.pdfs;
+        padding: 20px;
+
+        Rectangle {
+            border-radius: Platform.style-name == "fluent" ? 4px : 2px;
+            border-width: Platform.style-name == "fluent" ? 2px : 1px;
+            border-color: Palette.border;
+
+            VerticalBox {
+            padding: 20px;
+                Text {
+                    horizontal-alignment: center;
+                    height:20px;
+                    text: "PDF Ordner: ";
+                }
+                Text {
+                    height:20px;
+                    text: AppState.pdfs;
+                }
+                Button {
+                    height:30px;
+                    text: "PDF Ordner wählen";
+                    clicked => {
+                        request-pdf-dir();
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            border-radius: Platform.style-name == "fluent" ? 4px : 2px;
+            border-width: Platform.style-name == "fluent" ? 2px : 1px;
+            border-color: Palette.border;
+
+            VerticalBox {
+                padding: 20px;
+                Text {
+                    horizontal-alignment: center;
+                    height:20px;
+                    text: "Buchungsstapel: ";
+                }
+                Text {
+                    height:20px;
+                    text: AppState.csv;
+                }
+                Button {
+                    height:30px;
+                    text: "Buchungsstapel.csv wählen";
+                    clicked => {
+                        request-csv-file();
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            border-radius: Platform.style-name == "fluent" ? 4px : 2px;
+            border-width: Platform.style-name == "fluent" ? 2px : 1px;
+            border-color: Palette.border;
+
+            VerticalBox {
+                padding: 20px;
+                Text {
+                    height:20px;
+                    text: "Mandant: ";
+                }
+                ComboBox {
+                    height:30px;
+                    model: ["Option 1", "Option 2", "Option 3"];
+                    current-index: 0;
+                    selected(value) => {
+                    }
+                }
+            }
         }
 
         Button {
-            height:60px;
-            text: "PDF Ordner wählen";
-            clicked => {
-                request-pdf-dir();
-            }
-        }
-        Text {
-            height:20px;
-            text: "Buchungsstapel: " + AppState.csv;
-        }
-        Button {
-            height:60px;
-            text: "Buchungsstapel.csv wählen";
-            clicked => {
-                request-csv-file();
-            }
-        }
-        Text {
             height: 30px;
-        }
-        Button {
-            height:60px;
             text: "Weiter";
             clicked => {
                 root.get-names();
@@ -64,11 +114,13 @@ component ChooseNamespace inherits Rectangle {
     callback generate();
     VerticalBox {
         HorizontalBox {
+
             LineEdit {
                 edited(text) => {filter(self.text)}
                 horizontal-alignment: TextHorizontalAlignment.center;
                 placeholder-text: "Filter";
             }
+
             Button {
                 clicked => {generate()}
                 text: "Weiter";
@@ -82,17 +134,25 @@ component ChooseNamespace inherits Rectangle {
             alignment: LayoutAlignment.stretch;
             padding: 10px;
 
-            ListView {
-                accessible-role: AccessibleRole.button;
-                for item in AppState.pdf-names: Rectangle {
-                    height: 40px;
-                    HorizontalLayout {
-                        alignment: LayoutAlignment.center;
-                        Text { text: item.before; color: Colors.white; }
+            Rectangle {
+                border-radius: Platform.style-name == "fluent" ? 4px : 2px;
+                border-width: Platform.style-name == "fluent" ? 2px : 1px;
+                border-color: Palette.border;
+                VerticalLayout {
+                    padding: 10px;
+                    ListView {
+                        accessible-role: AccessibleRole.button;
+                        for item in AppState.pdf-names: Rectangle {
+                            height: 40px;
+                            HorizontalLayout {
+                                alignment: LayoutAlignment.center;
+                                Text { text: item.before; color: Colors.white; }
 
-                       private property <color> c: item.partner ? Colors.green : Colors.blue;
-                        Text { text: item.matched; color: c; font-weight: 700; }
-                        Text { text: item.after; color: Colors.white; }
+                               private property <color> c: item.partner ? Colors.green : Colors.blue;
+                                Text { text: item.matched; color: c; font-weight: 700; }
+                                Text { text: item.after; color: Colors.white; }
+                            }
+                        }
                     }
                 }
             }
@@ -101,16 +161,24 @@ component ChooseNamespace inherits Rectangle {
                 width: 1px;
                 background: #ccc;
             }
-            ListView {
-                for item in AppState.csv-names: Rectangle {
-                    height: 40px;
-                    HorizontalLayout {
-                        alignment: LayoutAlignment.center;
-                        Text { text: item.before; color: Colors.white; }
+            Rectangle {
+                border-radius: Platform.style-name == "fluent" ? 4px : 2px;
+                border-width: Platform.style-name == "fluent" ? 2px : 1px;
+                border-color: Palette.border;
+                VerticalLayout {
+                    padding: 10px;
+                    ListView  {
+                        for item in AppState.csv-names: Rectangle {
+                            height: 40px;
+                            HorizontalLayout {
+                                alignment: LayoutAlignment.center;
+                                Text { text: item.before; color: Colors.white; }
 
-                        private property <color> c: item.partner ? Colors.green : Colors.blue;
-                        Text { text: item.matched; color: c; font-weight: 700; }
-                        Text { text: item.after; color: Colors.white; }
+                                private property <color> c: item.partner ? Colors.green : Colors.blue;
+                                Text { text: item.matched; color: c; font-weight: 700; }
+                                Text { text: item.after; color: Colors.white; }
+                            }
+                        }
                     }
                 }
             }
@@ -120,6 +188,8 @@ component ChooseNamespace inherits Rectangle {
 
 export component AppWindow inherits Window {
     preferred-width: 200px;
+    min-height: 400px;
+    min-width: 200px;
     preferred-height: 400px;
     callback request-pdf-dir();
     callback request-csv-file();

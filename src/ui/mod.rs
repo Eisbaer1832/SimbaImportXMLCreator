@@ -1,8 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use crate::filter::filter;
+use crate::generate::generate;
+use crate::get_pdf_ids;
+use crate::profiles::Profile;
 use crate::read_ids::get_csv_ids;
-use crate::{generate, get_pdf_ids};
 use native_dialog::DialogBuilder;
 use slint::{ModelRc, SharedString, ToSharedString, VecModel};
 use std::cell::RefCell;
@@ -10,7 +12,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 slint::include_modules!();
-pub fn ui(pdf_directory: String, csv_file: String) {
+pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
     println!("{}", pdf_directory);
     let ui = AppWindow::new().expect("Ouch, slint somehow didn't create the window");
     let csv_path = Rc::new(RefCell::new(PathBuf::from(csv_file)));
@@ -18,6 +20,13 @@ pub fn ui(pdf_directory: String, csv_file: String) {
     let all_pdf_names = Rc::new(RefCell::new(Vec::<String>::new()));
     let all_csv_names = Rc::new(RefCell::new(Vec::<String>::new()));
     let last_pattern = Rc::new(RefCell::new(String::new()));
+
+    let mut names: Vec<SharedString> = profiles.iter().map(|p| SharedString::from(p.name.as_str())).collect();
+    names.push(SharedString::from("Neu"));
+
+    AppState::get(&ui).set_profile(names[0].clone());
+
+    AppState::get(&ui).set_profiles(ModelRc::new(VecModel::from(names)));
 
     AppState::get(&ui).set_csv(csv_path.borrow().display().to_shared_string());
     AppState::get(&ui).set_pdfs(pdf_dir.borrow().display().to_shared_string());
@@ -27,7 +36,7 @@ pub fn ui(pdf_directory: String, csv_file: String) {
         let csv_path = Rc::clone(&csv_path);
         move || {
             let ui = ui_handle.unwrap();
-            *csv_path.borrow_mut() = file_picker();
+            *csv_path.borrow_mut() = file_picker(String::from("csv"));
 
             AppState::get(&ui).set_csv(csv_path.borrow().display().to_shared_string())
         }
@@ -77,9 +86,27 @@ pub fn ui(pdf_directory: String, csv_file: String) {
                     }).collect::<Vec<MatchedPattern>>()
                 ))
             );
-            AppState::get(&ui).set_current_view(1);
+
+            let profile = AppState::get(&ui).get_profile();
+            if profile == "Neu" {
+                AppState::get(&ui).set_current_view(1);
+            }else {
+                AppState::get(&ui).set_current_view(2);
+
+                let csv_path = Rc::clone(&csv_path_clone);
+                let pdf_dir = Rc::clone(&pdf_dir_clone);
+
+                let p = profiles.iter().find( |val| val.name == profile.to_string() ).unwrap();
+
+                generate(pdf_dir.borrow().clone(), csv_path.borrow().clone(), p.pattern.clone());
+
+            }
         }});
 
+    ui.on_change_profiles_location(|| {
+        file_picker(String::from("json"));
+        println!("Profiles location changed!");
+    });
 
     ui.on_generate({
         let csv_path = Rc::clone(&csv_path);
@@ -120,17 +147,14 @@ pub fn ui(pdf_directory: String, csv_file: String) {
     ui.run().expect("Failed to init window");
 }
 
-fn file_picker() -> PathBuf {
+fn file_picker(file_type: String) -> PathBuf {
     let path = DialogBuilder::file()
-        .add_filter("csv", ["csv"])
+        .add_filter(&file_type, [&file_type])
         .open_single_file()
         .show()
         .unwrap();
 
-    match path {
-        Some(path) => path,
-        None => return PathBuf::new(),
-    }
+    path.unwrap_or_else(|| PathBuf::new())
 }
 
 fn directory_picker() -> PathBuf {

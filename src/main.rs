@@ -1,18 +1,18 @@
-mod update_files;
 pub mod ui;
 pub mod read_ids;
 pub mod utils;
-pub mod filter;
-pub mod zip;
+pub mod generate;
+mod filter;
+pub mod profiles;
+
 
 use crate::read_ids::get_pdf_ids;
 use crate::ui::ui;
-use crate::update_files::{generate_xml, update_csv};
-use crate::zip::zip_directory;
-use regex::Regex;
-use std::path::{Path, PathBuf};
-use std::process;
 use clap::Parser;
+use crate::profiles::get_profiles;
+use preferences::{AppInfo, PreferencesMap, Preferences};
+
+const APP_INFO: AppInfo = AppInfo{name: "SimbaImportCreator", author: "Tino Brinker"};
 
 /// Generator for SIMBA import files
 #[derive(Parser, Debug)]
@@ -35,25 +35,13 @@ fn resolve_path(path: &str) -> String {
 
 fn main() {
     println!("Creating import files!");
+    let mut prefs: PreferencesMap<String> = PreferencesMap::new();
+
     let args = Arguments::parse();
     let pdf_directory = resolve_path(&args.directory);
     let csv_file = resolve_path(&args.csv);
 
-    ui(pdf_directory, csv_file);
-}
+    let profiles = get_profiles().expect("Could not get profiles");
 
-fn generate(pdf_path: PathBuf, csv_path: PathBuf, pattern: String) {
-    let mut ids: Vec<String> = get_pdf_ids(pdf_path.clone());
-
-    generate_xml(ids.clone(), pdf_path.clone(), pattern.clone()).expect("couldn't create xml");
-
-    let re = Regex::new(pattern.as_str()).expect("invalid regex pattern");
-    ids = ids.iter().filter_map(|id| {
-        re.find(id).map(|m| m.as_str().to_string())
-    }).collect();
-
-    update_csv(ids, csv_path, pdf_path.clone(), pattern).expect("couldn't update csv");
-
-    zip_directory(pdf_path.as_path(), Path::new("out.zip")).expect("zipping failed");
-    process::exit(0)
+    ui(pdf_directory, csv_file, profiles);
 }

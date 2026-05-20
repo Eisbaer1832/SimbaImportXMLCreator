@@ -37,7 +37,7 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Strin
                     println!("found: {} {}", pattern, id);
 
                     let link_index = headers.iter().position(|h| h == "Beleglink").unwrap();
-                    let t = format!("BEDI \"{}\"", id);
+                    let t = format!("{}.pdf", id);
                     new_record = record
                         .iter()
                         .enumerate()
@@ -80,6 +80,7 @@ pub fn generate_xml(ids: Vec<String>, pdf_path: PathBuf, pattern: String) -> Res
     // add actual PDF links
     writer.write_event(Event::Start(BytesStart::new("content")))?;
     for id in ids {
+        println!("{}", pattern);
         let id_extensionless =  Regex::new(&*pattern)?.find(&*id).unwrap().as_str();
 
         let mut document = BytesStart::new("document");

@@ -1,4 +1,4 @@
-import { ComboBox, Palette, Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox } from "std-widgets.slint";
+import { ComboBox, Palette, Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox, Spinner, StandardButton } from "std-widgets.slint";
 
 struct MatchedPattern {
     before: string,
@@ -7,11 +7,16 @@ struct MatchedPattern {
     partner: bool
 }
 
+
 // In AppState:
 export global AppState {
     in-out property <string> csv: "";
     in-out property <string> pdfs: "";
     in-out property <int> current-view: 0;
+
+    in-out property <[string]> profiles;
+
+    in-out property <string> profile;
 
     in-out property <[MatchedPattern]> csv-names;
     in-out property <[MatchedPattern]> pdf-names;
@@ -21,6 +26,7 @@ component FileSelect inherits Rectangle  {
     callback request-pdf-dir();
     callback request-csv-file();
     callback get_names();
+    callback change_profiles_location();
 
     VerticalBox {
         padding: 20px;
@@ -31,10 +37,11 @@ component FileSelect inherits Rectangle  {
             border-color: Palette.border;
 
             VerticalBox {
-            padding: 20px;
+                padding: 20px;
                 Text {
                     horizontal-alignment: center;
                     height:20px;
+                    font-weight: 700;
                     text: "PDF Ordner: ";
                 }
                 Text {
@@ -61,6 +68,7 @@ component FileSelect inherits Rectangle  {
                 Text {
                     horizontal-alignment: center;
                     height:20px;
+                    font-weight: 700;
                     text: "Buchungsstapel: ";
                 }
                 Text {
@@ -88,11 +96,18 @@ component FileSelect inherits Rectangle  {
                     height:20px;
                     text: "Mandant: ";
                 }
-                ComboBox {
-                    height:30px;
-                    model: ["Option 1", "Option 2", "Option 3"];
-                    current-index: 0;
-                    selected(value) => {
+                HorizontalBox {
+                    ComboBox {
+                        height:30px;
+                        model: AppState.profiles;
+                        current-index: 0;
+                        selected(value) => {
+                            AppState.profile = value
+                        }
+                    }
+                    Button {
+                        clicked => {change_profiles_location()}
+                        icon: @image-url("./icons/settings.svg");
                     }
                 }
             }
@@ -112,9 +127,13 @@ component FileSelect inherits Rectangle  {
 component ChooseNamespace inherits Rectangle {
     callback filter(string);
     callback generate();
+
     VerticalBox {
         HorizontalBox {
-
+            Button {
+                clicked => {AppState.current-view = 0}
+                text: "Zurück";
+            }
             LineEdit {
                 edited(text) => {filter(self.text)}
                 horizontal-alignment: TextHorizontalAlignment.center;
@@ -186,25 +205,53 @@ component ChooseNamespace inherits Rectangle {
     }
 }
 
+component Finish inherits Rectangle {
+    //TODO this should properly only appear, after the zipping finished
+    VerticalLayout {
+        alignment: center;
+        spacing: 15px;
+
+        Text {
+            text: "Die Importdateien wurden erfolgreich erstellt!";
+            font-size: 24pt;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: "Du kannst dieses Fenster jetzt schließen :)";
+            font-size: 12pt;
+            horizontal-alignment: center;
+        }
+    }
+}
+
 export component AppWindow inherits Window {
-    preferred-width: 200px;
-    min-height: 400px;
-    min-width: 200px;
-    preferred-height: 400px;
+    preferred-height: 460px;
+    preferred-width: 800px;
+    min-height: 460px;
+    min-width: 800px;
+    max-height: 460px;
+    max-width: 800px;
     callback request-pdf-dir();
     callback request-csv-file();
     callback generate();
     callback get-names();
     callback filter(string);
+    callback change_profiles_location();
 
     if AppState.current-view == 0: FileSelect {
         request-pdf-dir => { root.request-pdf-dir(); }
         request-csv-file => { root.request-csv-file(); }
         get_names => { root.get-names(); }
+        change_profiles_location => {root.change_profiles_location()}
     }
 
     if AppState.current-view == 1: ChooseNamespace{
         filter(text) => { root.filter(text); }
-        generate() => {generate()}
+        generate() => {
+            generate();
+            AppState.current-view = 2
+        }
     }
+
+    if AppState.current-view == 2: Finish {}
 }

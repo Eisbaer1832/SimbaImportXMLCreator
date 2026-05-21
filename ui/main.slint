@@ -27,6 +27,7 @@ component FileSelect inherits Rectangle  {
     callback request-csv-file();
     callback get_names();
     callback change_profiles_location();
+    callback delete_profile();
 
     VerticalBox {
         padding: 20px;
@@ -106,9 +107,16 @@ component FileSelect inherits Rectangle  {
                         }
                     }
                     Button {
+                        clicked => {delete_profile()}
+                        icon: @image-url("./icons/delete.svg");
+                    }
+                    Button {
                         clicked => {change_profiles_location()}
                         icon: @image-url("./icons/settings.svg");
                     }
+                }
+                Text {
+                    text: "Gefundene Matches:";
                 }
             }
         }
@@ -245,6 +253,8 @@ export component AppWindow inherits Window {
     callback get-names();
     callback filter(string);
     callback change_profiles_location();
+    callback update_name(string);
+    callback delete_profile();
 
     title: @tr("Simba Importbearbeitung");
 
@@ -255,10 +265,12 @@ export component AppWindow inherits Window {
         request-csv-file => { root.request-csv-file(); }
         get_names => { root.get-names(); }
         change_profiles_location => {root.change_profiles_location()}
+        delete_profile => {root.delete_profile()}
     }
 
     if AppState.current-view == 1: ChooseNamespace{
         filter(text) => { root.filter(text); }
+        update_name(text) => {root.update_name(text)}
         generate() => {
             generate();
         }

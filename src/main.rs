@@ -6,11 +6,11 @@ mod filter;
 pub mod profiles;
 
 
+use crate::profiles::get_profiles;
 use crate::read_ids::get_pdf_ids;
 use crate::ui::ui;
 use clap::Parser;
-use crate::profiles::get_profiles;
-use preferences::{AppInfo, PreferencesMap, Preferences};
+use preferences::{AppInfo};
 
 const APP_INFO: AppInfo = AppInfo{name: "SimbaImportCreator", author: "Tino Brinker"};
 
@@ -35,7 +35,6 @@ fn resolve_path(path: &str) -> String {
 
 fn main() {
     println!("Creating import files!");
-    let mut prefs: PreferencesMap<String> = PreferencesMap::new();
 
     let args = Arguments::parse();
     let pdf_directory = resolve_path(&args.directory);

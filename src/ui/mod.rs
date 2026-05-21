@@ -3,7 +3,8 @@
 use crate::filter::filter;
 use crate::generate::generate;
 use crate::get_pdf_ids;
-use crate::profiles::Profile;
+use crate::profiles::settings::set_profile_location;
+use crate::profiles::{set_profiles, Profile};
 use crate::read_ids::get_csv_ids;
 use native_dialog::DialogBuilder;
 use slint::{ModelRc, SharedString, ToSharedString, VecModel};
@@ -21,6 +22,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
     let all_pdf_names = Rc::new(RefCell::new(Vec::<String>::new()));
     let all_csv_names = Rc::new(RefCell::new(Vec::<String>::new()));
     let last_pattern = Rc::new(RefCell::new(String::new()));
+    let name = Rc::new(RefCell::new(String::new()));
 
     let mut names: Vec<SharedString> = profiles.iter().map(|p| SharedString::from(p.name.as_str())).collect();
     names.push(SharedString::from("Neu"));
@@ -105,21 +107,22 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
         }});
 
     ui.on_change_profiles_location(|| {
-        file_picker(String::from("json"));
+        let profile_location = file_picker(String::from("json"));
+        set_profile_location(profile_location);
         println!("Profiles location changed!");
     });
 
     let ui_handle = ui.as_weak();
     ui.on_generate({
         let last_pattern_ref = Rc::clone(&last_pattern);
-
+        let name_ref = Rc::clone(&name);
         move || {
-
-
             let pdf_dir = pdf_dir.borrow().clone();
             let csv_path = csv_path.borrow().clone();
             let last_pattern = last_pattern_ref.borrow().clone();
             let ui_handle_clone = ui_handle.clone();
+
+            set_profiles(name_ref.borrow().clone(), last_pattern_ref.borrow().clone()).expect("Couldn't save profile");
 
             thread::spawn(move || {
                 generate(pdf_dir, csv_path, last_pattern);
@@ -161,6 +164,14 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
             );
         }
     });
+
+    ui.on_update_name({
+        let name = name.clone();
+        move |n: SharedString| {
+            *name.borrow_mut() = String::from(n);
+        }
+    });
+
     ui.run().expect("Failed to init window");
 }
 

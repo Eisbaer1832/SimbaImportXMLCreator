@@ -1,4 +1,4 @@
-import { ComboBox, Palette, Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox, Spinner, StandardButton } from "std-widgets.slint";
+import { ComboBox, Palette, Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox, Spinner, StandardButton, ProgressIndicator } from "std-widgets.slint";
 
 struct MatchedPattern {
     before: string,
@@ -126,6 +126,7 @@ component FileSelect inherits Rectangle  {
 
 component ChooseNamespace inherits Rectangle {
     callback filter(string);
+    callback update_name(string);
     callback generate();
 
     VerticalBox {
@@ -138,6 +139,12 @@ component ChooseNamespace inherits Rectangle {
                 edited(text) => {filter(self.text)}
                 horizontal-alignment: TextHorizontalAlignment.center;
                 placeholder-text: "Filter";
+            }
+            LineEdit {
+                width: 200px;
+                edited(text) => {update_name(self.text)}
+                horizontal-alignment: TextHorizontalAlignment.center;
+                placeholder-text: "Mandant";
             }
 
             Button {
@@ -165,11 +172,11 @@ component ChooseNamespace inherits Rectangle {
                             height: 40px;
                             HorizontalLayout {
                                 alignment: LayoutAlignment.center;
-                                Text { text: item.before; color: Colors.white; }
+                                Text { text: item.before; color: Colors.black; }
 
                                private property <color> c: item.partner ? Colors.green : Colors.blue;
                                 Text { text: item.matched; color: c; font-weight: 700; }
-                                Text { text: item.after; color: Colors.white; }
+                                Text { text: item.after; color: Colors.black; }
                             }
                         }
                     }
@@ -191,11 +198,11 @@ component ChooseNamespace inherits Rectangle {
                             height: 40px;
                             HorizontalLayout {
                                 alignment: LayoutAlignment.center;
-                                Text { text: item.before; color: Colors.white; }
+                                Text { text: item.before; color: Colors.black; }
 
                                 private property <color> c: item.partner ? Colors.green : Colors.blue;
                                 Text { text: item.matched; color: c; font-weight: 700; }
-                                Text { text: item.after; color: Colors.white; }
+                                Text { text: item.after; color: Colors.black; }
                             }
                         }
                     }
@@ -204,6 +211,7 @@ component ChooseNamespace inherits Rectangle {
         }
     }
 }
+
 
 component Finish inherits Rectangle {
     //TODO this should properly only appear, after the zipping finished
@@ -227,7 +235,7 @@ component Finish inherits Rectangle {
 export component AppWindow inherits Window {
     preferred-height: 460px;
     preferred-width: 800px;
-    min-height: 460px;
+    min-height: 480px;
     min-width: 800px;
     max-height: 460px;
     max-width: 800px;
@@ -238,7 +246,11 @@ export component AppWindow inherits Window {
     callback filter(string);
     callback change_profiles_location();
 
+    title: @tr("Simba Importbearbeitung");
+
     if AppState.current-view == 0: FileSelect {
+        height: 461px;
+        width: 819px;
         request-pdf-dir => { root.request-pdf-dir(); }
         request-csv-file => { root.request-csv-file(); }
         get_names => { root.get-names(); }
@@ -249,9 +261,7 @@ export component AppWindow inherits Window {
         filter(text) => { root.filter(text); }
         generate() => {
             generate();
-            AppState.current-view = 2
         }
     }
-
     if AppState.current-view == 2: Finish {}
 }

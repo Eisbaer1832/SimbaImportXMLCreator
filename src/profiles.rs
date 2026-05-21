@@ -11,8 +11,8 @@ pub fn get_profiles() -> Result<Vec<Profile>> {
     let data = r#"
         [
             {
-                "name" : "LüPa",
-                "pattern" : "R0000"
+                "name" : "Janßen und Kemper",
+                "pattern" : "Rechnung 00000"
             }
         ]
         "#;

@@ -1,11 +1,13 @@
 use crate::ui::MatchedPattern;
-use regex::Regex;
-use slint::{SharedString};
+use regex::{Error, Regex};
+use slint::SharedString;
+use std::str::FromStr;
 
-pub fn easy_regex(pattern: &str) -> String {
+pub fn easy_regex(pattern: &str) -> Result<Regex, Error> {
     let mut pat = String::new();
     let mut chars = pattern.chars().peekable();
 
+    pat.push_str("(?i)");
     while let Some(c) = chars.next() {
         if c == '0' {
             let mut zeros = 1;
@@ -18,12 +20,12 @@ pub fn easy_regex(pattern: &str) -> String {
             pat.push(c);
         }
     }
-    pat
+    Regex::from_str(&*pat)
 }
 
 
 pub fn filter(data_to_filter: Vec<String>, pattern: &str) -> Vec<MatchedPattern> {
-    let filtered: Vec<MatchedPattern> = match Regex::new(&*easy_regex(pattern)) {
+    let filtered: Vec<MatchedPattern> = match easy_regex(pattern) {
         Ok(re) => data_to_filter
             .iter()
             .filter(|name| re.is_match(name))

@@ -7,15 +7,19 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
+use csv::{QuoteStyle, WriterBuilder};
 
-pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: String) -> Result<(), Box<dyn Error>> {
+pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex) -> Result<(), Box<dyn Error>> {
     let (first_line, mut reader) = get_csv_reader(csv);
 
     let headers = reader.headers()?.clone();
 
-    let mut raw_writer = BufWriter::new(File::create(out_dir.display().to_string() + "/Buchungsstapel.csv")?);
+    let mut raw_writer = BufWriter::new(File::create(out_dir.display().to_string() + "/EXTF_Import-Buchungsstapel.csv")?);
     raw_writer.write(first_line.as_bytes())?; // add the metadata line to the new file
-    let mut wtr = csv::Writer::from_writer(raw_writer);
+    let mut wtr = WriterBuilder::new()
+        .delimiter(b';')
+        .quote_style(QuoteStyle::NonNumeric)
+        .from_writer(raw_writer);
     wtr.write_record(&headers)?;
 
     for result in reader.records() {
@@ -27,9 +31,8 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Strin
                 let buchungs_text_index = headers.iter().position(|h| h == "Buchungstext").expect("Konnte keinen Buchungstext header finden");
                 let text : String = record.get(buchungs_text_index).expect("Kein Buchungstext vorhanden").to_string();
 
-                let re = Regex::new(&*pattern)?;
-                let id = re.find(text.as_str())
-                    .expect("cant get string").as_str().to_string();
+                let id = pattern.find(text.as_str())
+                    .expect("cant get string").as_str().to_string().to_lowercase();
 
 
                 // if the id corresponds to a PDF, add the PDF link
@@ -54,7 +57,7 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Strin
 }
 
 
-pub fn generate_xml(ids: Vec<String>, pdf_path: PathBuf, pattern: String) -> Result<(), Box<dyn Error>> {
+pub fn generate_xml(ids: Vec<String>, pdf_path: PathBuf, pattern: Regex) -> Result<(), Box<dyn Error>> {
     let file = File::create(pdf_path.display().to_string() + "/document.xml")?;
     let writer = BufWriter::new(file);
 
@@ -81,15 +84,17 @@ pub fn generate_xml(ids: Vec<String>, pdf_path: PathBuf, pattern: String) -> Res
     writer.write_event(Event::Start(BytesStart::new("content")))?;
     for id in ids {
         println!("{}", pattern);
-        let id_extensionless =  Regex::new(&*pattern)?.find(&*id).unwrap().as_str();
+        let id_extensionless =  pattern.find(&*id).unwrap().as_str().to_lowercase();
 
         let mut document = BytesStart::new("document");
-        document.push_attribute(("guid", id_extensionless));
+        document.push_attribute(("guid", id_extensionless.as_str()));
         writer.write_event(Event::Start(document))?;
 
+
+        let name = format!("{id_extensionless}.pdf");
         writer.create_element("extension")
             .with_attribute(("xsi:type", "File"))
-            .with_attribute(("name", id.as_str()))
+            .with_attribute(("name", name.as_str()))
             .write_empty()?;
 
         writer.write_event(Event::End(BytesEnd::new("document")))?;

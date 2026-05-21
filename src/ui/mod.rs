@@ -10,6 +10,7 @@ use slint::{ModelRc, SharedString, ToSharedString, VecModel};
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
+use std::thread;
 
 slint::include_modules!();
 pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
@@ -108,12 +109,28 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
         println!("Profiles location changed!");
     });
 
+    let ui_handle = ui.as_weak();
     ui.on_generate({
-        let csv_path = Rc::clone(&csv_path);
-        let pdf_dir = Rc::clone(&pdf_dir);
-        let last_pattern = Rc::clone(&last_pattern);
+        let last_pattern_ref = Rc::clone(&last_pattern);
+
         move || {
-            generate(pdf_dir.borrow().clone(), csv_path.borrow().clone(),last_pattern.borrow().clone());
+
+
+            let pdf_dir = pdf_dir.borrow().clone();
+            let csv_path = csv_path.borrow().clone();
+            let last_pattern = last_pattern_ref.borrow().clone();
+            let ui_handle_clone = ui_handle.clone();
+
+            thread::spawn(move || {
+                generate(pdf_dir, csv_path, last_pattern);
+
+                slint::invoke_from_event_loop(move || {
+                    if let Some(ui) = ui_handle_clone.upgrade() {
+                        AppState::get(&ui).set_current_view(2);
+                    }
+                })
+                .unwrap();
+            });
         }
     });
 

@@ -4,7 +4,7 @@ use crate::filter::filter;
 use crate::generate::generate;
 use crate::get_pdf_ids;
 use crate::profiles::settings::set_profile_location;
-use crate::profiles::{set_profiles, Profile};
+use crate::profiles::{delete_profile, set_profiles, Profile};
 use crate::read_ids::get_csv_ids;
 use native_dialog::DialogBuilder;
 use slint::{ModelRc, SharedString, ToSharedString, VecModel};
@@ -13,24 +13,41 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::thread;
 
+
+
 slint::include_modules!();
 pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
     println!("{}", pdf_directory);
     let ui = AppWindow::new().expect("Ouch, slint somehow didn't create the window");
+
     let csv_path = Rc::new(RefCell::new(PathBuf::from(csv_file)));
     let pdf_dir = Rc::new(RefCell::new(PathBuf::from(pdf_directory))); // had to use RefCell, to avoid ownership issues
     let all_pdf_names = Rc::new(RefCell::new(Vec::<String>::new()));
     let all_csv_names = Rc::new(RefCell::new(Vec::<String>::new()));
     let last_pattern = Rc::new(RefCell::new(String::new()));
     let name = Rc::new(RefCell::new(String::new()));
+    let mut initial_names: Vec<SharedString> = profiles.iter().map(|p| SharedString::from(p.name.as_str())).collect();
+    initial_names.push(SharedString::from("Neu"));
+    Rc::new(RefCell::new(initial_names.clone()));
 
-    let mut names: Vec<SharedString> = profiles.iter().map(|p| SharedString::from(p.name.as_str())).collect();
-    names.push(SharedString::from("Neu"));
+    let ui_handle = ui.as_weak();
 
-    AppState::get(&ui).set_profile(names[0].clone());
+    let update_profiles = {
+        let ui_handle = ui_handle.clone();
+        Rc::new(RefCell::new(move |profiles: Vec<Profile>| {
+            let ui = ui_handle.unwrap();
+            let n: Vec<SharedString> = profiles.iter()
+                .map(|p| SharedString::from(p.name.as_str()))
+                .collect();
+            let mut n_with_neu = n.clone();
+            n_with_neu.push(SharedString::from("Neu"));
+            AppState::get(&ui).set_profiles(ModelRc::new(VecModel::from(n_with_neu)));
+        }))
+    };
 
-    AppState::get(&ui).set_profiles(ModelRc::new(VecModel::from(names)));
+    AppState::get(&ui).set_profile(initial_names[0].clone());
 
+    AppState::get(&ui).set_profiles(ModelRc::new(VecModel::from(initial_names)));
     AppState::get(&ui).set_csv(csv_path.borrow().display().to_shared_string());
     AppState::get(&ui).set_pdfs(pdf_dir.borrow().display().to_shared_string());
 
@@ -116,11 +133,12 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
     ui.on_generate({
         let last_pattern_ref = Rc::clone(&last_pattern);
         let name_ref = Rc::clone(&name);
+        let ui_handle_ref = ui_handle.clone();
         move || {
             let pdf_dir = pdf_dir.borrow().clone();
             let csv_path = csv_path.borrow().clone();
             let last_pattern = last_pattern_ref.borrow().clone();
-            let ui_handle_clone = ui_handle.clone();
+            let ui_handle_clone = ui_handle_ref.clone();
 
             set_profiles(name_ref.borrow().clone(), last_pattern_ref.borrow().clone()).expect("Couldn't save profile");
 
@@ -171,6 +189,35 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
             *name.borrow_mut() = String::from(n);
         }
     });
+
+
+    ui.on_delete_profile({
+        let ui_handle = ui_handle.clone();
+        let update_profiles = update_profiles.clone();
+        move || {
+            let dialog = Rc::new(ConfirmDialog::new().unwrap());
+            dialog.show().unwrap();
+
+            dialog.on_confirm({
+                let dialog = dialog.clone();
+                let ui_handle = ui_handle.clone();
+                let update_profiles = update_profiles.clone();
+                move || {
+                    let ui = ui_handle.unwrap();
+                    let profile = AppState::get(&ui).get_profile();
+                    let new_profiles = delete_profile(String::from(profile));
+                    (update_profiles.borrow_mut())(new_profiles);
+                    dialog.hide().unwrap();
+                }
+            });
+
+            dialog.on_abort({
+                let dialog = dialog.clone();
+                move || { dialog.hide().unwrap(); }
+            });
+        }
+    });
+
 
     ui.run().expect("Failed to init window");
 }

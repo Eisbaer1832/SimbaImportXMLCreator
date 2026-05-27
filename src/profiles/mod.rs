@@ -15,7 +15,6 @@ pub struct Profile {
 
 pub fn get_profiles() -> Result<Vec<Profile>> {
     let profile_location = fetch_profile_location();
-
     let json_data = fs::read_to_string(profile_location);
 
     match json_data {
@@ -42,4 +41,22 @@ pub fn set_profiles(n:String, p: String) -> Result<()> {
     file.write(json_data.as_bytes()).expect("can't save profiles");
 
     Ok(())
+}
+
+pub fn delete_profile(name: String) -> Vec<Profile> {
+    let profile_location = fetch_profile_location();
+    let mut json_data = fs::read_to_string(profile_location.clone()).unwrap();
+    let mut ps: Vec<Profile> = serde_json::from_str(&*json_data).expect("JSON was mallformed");
+
+    for i in 0..ps.len() - 1 { //TODO fix this, since it prevents some elements from being removed 
+        if ps[i].name == name {
+            ps.remove(i);
+        }
+    }
+
+    json_data = serde_json::to_string_pretty(&ps).unwrap();
+    let mut file = File::create(profile_location).unwrap();
+    file.write(json_data.as_bytes()).expect("can't save profiles");
+
+    get_profiles().expect("can't get profiles")
 }

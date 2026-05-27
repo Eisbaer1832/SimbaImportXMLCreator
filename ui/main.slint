@@ -240,13 +240,32 @@ component Finish inherits Rectangle {
     }
 }
 
+
+export component ConfirmDialog inherits Dialog {
+    title: @tr("Profil löschen");
+    callback confirm();
+    callback abort();
+
+    Text {
+      text: "Bist du sicher, dass du dieses Profil löschen möchtest?";
+    }
+    StandardButton {
+        kind: ok;
+        clicked => {
+            confirm();
+        }
+    }
+    StandardButton {
+        kind: cancel;
+        clicked => {abort()}
+    }
+}
+
 export component AppWindow inherits Window {
-    preferred-height: 460px;
+    preferred-height: 500px;
     preferred-width: 800px;
-    min-height: 480px;
+    min-height: 500px;
     min-width: 800px;
-    max-height: 460px;
-    max-width: 800px;
     callback request-pdf-dir();
     callback request-csv-file();
     callback generate();
@@ -256,16 +275,17 @@ export component AppWindow inherits Window {
     callback update_name(string);
     callback delete_profile();
 
+
     title: @tr("Simba Importbearbeitung");
 
     if AppState.current-view == 0: FileSelect {
-        height: 461px;
-        width: 819px;
         request-pdf-dir => { root.request-pdf-dir(); }
         request-csv-file => { root.request-csv-file(); }
         get_names => { root.get-names(); }
         change_profiles_location => {root.change_profiles_location()}
-        delete_profile => {root.delete_profile()}
+        delete_profile => {
+            root.delete_profile()
+        }
     }
 
     if AppState.current-view == 1: ChooseNamespace{
@@ -277,3 +297,4 @@ export component AppWindow inherits Window {
     }
     if AppState.current-view == 2: Finish {}
 }
+

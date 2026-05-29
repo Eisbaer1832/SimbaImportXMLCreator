@@ -8,6 +8,7 @@ use std::fs::File;
 use std::io::Write;
 
 #[derive(Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct Profile {
     pub(crate) name: String,
     pub(crate) pattern: String
@@ -48,7 +49,7 @@ pub fn delete_profile(name: String) -> Vec<Profile> {
     let mut json_data = fs::read_to_string(profile_location.clone()).unwrap();
     let mut ps: Vec<Profile> = serde_json::from_str(&*json_data).expect("JSON was mallformed");
 
-    for i in 0..ps.len() - 1 { //TODO fix this, since it prevents some elements from being removed 
+    for i in 0..ps.len() {
         if ps[i].name == name {
             ps.remove(i);
         }

@@ -81,7 +81,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
     ui.on_get_names({
         let all_pdf_names = Rc::clone(&all_pdf_names);
         let all_csv_names = Rc::clone(&all_csv_names);
-
+        let profiles = profiles.clone();
         move || {
             let ui = ui_handle.unwrap();
             let pdf_names = get_pdf_ids(pdf_dir_clone.borrow().clone());
@@ -159,6 +159,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
         let all_pdf_names = Rc::clone(&all_pdf_names);
         let ui_handle = ui.as_weak();
         let last_pattern = Rc::clone(&last_pattern);
+        let all_csv_names = Rc::clone(&all_csv_names);
 
         move |pattern: SharedString| {
             let ui = ui_handle.unwrap();
@@ -206,7 +207,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
                     let ui = ui_handle.unwrap();
                     let profile = AppState::get(&ui).get_profile();
                     let new_profiles = delete_profile(String::from(profile));
-                    (update_profiles.borrow_mut())(new_profiles);
+                    update_profiles.borrow_mut()(new_profiles);
                     dialog.hide().unwrap();
                 }
             });
@@ -217,7 +218,6 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
             });
         }
     });
-
 
     ui.run().expect("Failed to init window");
 }

@@ -2,7 +2,7 @@
 AppName=SimbaImportHelper
 AppVersion=1.0
 DefaultDirName={autopf}\SimbaImportHelper
-DefaultGroupName=CapputinoDevelopment
+DefaultGroupName=Applications
 OutputDir=Output
 OutputBaseFilename=SimbaImportHelperInstaller
 

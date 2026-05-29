@@ -8,37 +8,50 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev mingw-w64
-
       - name: Install Rust toolchain + Windows target
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-gnu
-
       - name: Run tests
         run: cargo test --verbose
-
       - name: Build Windows release
         run: cargo build --release --target x86_64-pc-windows-gnu
+      - name: Upload exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: target/x86_64-pc-windows-gnu/release/*.exe
 
+  installer:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download exe artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-exe
+          path: target/release/
+      - name: Build installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: installer.iss
       - name: Get short SHA
         id: sha
-        run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
+        run: echo "short=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
       - name: Publish release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ steps.sha.outputs.short }}
           name: Release ${{ steps.sha.outputs.short }}
-          files: target/x86_64-pc-windows-gnu/release/*.exe
+          files: Output/*.exe

@@ -1,5 +1,5 @@
 [package]
-name = "SimbaImportXMLCreator"
+name = "SimbaImportHelper"
 version = "0.1.0"
 edition = "2024"
 authors = ["Tino Brinker <tino.brinker@ewe.net>"]

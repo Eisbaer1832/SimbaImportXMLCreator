@@ -16,11 +16,19 @@ pub struct Profile {
 
 pub fn get_profiles() -> Result<Vec<Profile>> {
     let profile_location = fetch_profile_location();
-    let json_data = fs::read_to_string(profile_location);
+    let json_data = fs::read_to_string(&profile_location);
 
     match json_data {
         Ok(data) => {
-            let ps: Vec<Profile> = serde_json::from_str(&*data).expect("JSON was mallformed");
+            let ps: Vec<Profile> = match serde_json::from_str(&*data) {
+                Ok(data) => data,
+                Err(_e) => {
+                    let mut file = File::create(&profile_location).unwrap();
+                    let json_data = serde_json::to_string_pretty(&Vec::<Profile>::new())?;
+                    file.write(json_data.as_bytes()).expect("can't save profiles");
+                    Vec::new()
+                }
+            };
             Ok(ps)
         }
         Err(_) => {

@@ -2,12 +2,12 @@ use crate::APP_INFO;
 use preferences::{Preferences, PreferencesMap};
 use std::path::PathBuf;
 
-pub fn fetch_profile_location() -> String {
+pub fn fetch_profile_location() -> PathBuf {
     let load_result = PreferencesMap::<String>::load(&APP_INFO, "profile_location");
     if load_result.is_ok(){
-        String::from(load_result.unwrap().get("profile_location").unwrap_or(&String::new()))
+        PathBuf::from(load_result.unwrap().get("profile_location").unwrap_or(&String::new()))
     }else {
-        String::new()
+        PathBuf::new()
     }
 }
 

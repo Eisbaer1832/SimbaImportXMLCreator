@@ -24,7 +24,11 @@ pub fn generate(pdf_path: PathBuf, csv_path: PathBuf, pattern: String) {
 
     let csv_result_name = &export_path.join("EXTF_Import-Buchungsstapel.csv");
     let csv_result_path = Path::new(csv_result_name);
-    zip_directory(pdf_path.as_path(), csv_result_path, Path::new(&export_path.join("EXTF_Import-Buchungsstapel.csv.zip")),regex).expect("zipping failed");
+
+    let result_file_name = export_path.join("EXTF_Import-Buchungsstapel.csv.zip");
+    let result_path = Path::new(&result_file_name);
+    zip_directory(pdf_path.as_path(), csv_result_path, result_path,regex).expect("zipping failed");
 
     fs::remove_file(csv_result_path).unwrap();
+    showfile::show_path_in_file_manager(result_path);
 }

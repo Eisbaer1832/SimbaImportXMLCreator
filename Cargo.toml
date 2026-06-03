@@ -1,6 +1,6 @@
 [package]
 name = "SimbaImportHelper"
-version = "0.1.0"
+version = "1.1.0"
 edition = "2024"
 authors = ["Tino Brinker <tino.brinker@ewe.net>"]
 
@@ -19,6 +19,7 @@ shellexpand = "3.1.2"
 serde_json = "1.0.149"
 serde = { version = "1.0.228", features = ["derive"] }
 preferences = "2.0.0"
+showfile = "0.1.1"
 
 [build-dependencies]
 slint-build = "1.16.0"

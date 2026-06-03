@@ -1,5 +1,3 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 use crate::filter::filter;
 use crate::generate::generate;
 use crate::get_pdf_ids;
@@ -83,6 +81,13 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
         let all_csv_names = Rc::clone(&all_csv_names);
         let profiles = profiles.clone();
         move || {
+            let csv_path = Rc::clone(&csv_path_clone).borrow().clone();
+            let pdf_dir = Rc::clone(&pdf_dir_clone).borrow().clone();
+
+            print!("generating");
+            if !csv_path.exists() && !pdf_dir.exists() {
+                return;
+            }
             let ui = ui_handle.unwrap();
             let pdf_names = get_pdf_ids(pdf_dir_clone.borrow().clone());
             let csv_names = get_csv_ids(csv_path_clone.borrow().clone());
@@ -110,16 +115,10 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
             let profile = AppState::get(&ui).get_profile();
             if profile == "Neu" {
                 AppState::get(&ui).set_current_view(1);
-            }else {
+            } else {
                 AppState::get(&ui).set_current_view(2);
-
-                let csv_path = Rc::clone(&csv_path_clone);
-                let pdf_dir = Rc::clone(&pdf_dir_clone);
-
-                let p = profiles.iter().find( |val| val.name == profile.to_string() ).unwrap();
-
-                generate(pdf_dir.borrow().clone(), csv_path.borrow().clone(), p.pattern.clone());
-
+                let p = profiles.iter().find(|val| val.name == profile.to_string()).unwrap();
+                generate(pdf_dir, csv_path, p.pattern.clone());
             }
         }});
 
@@ -143,14 +142,16 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
             set_profiles(name_ref.borrow().clone(), last_pattern_ref.borrow().clone()).expect("Couldn't save profile");
 
             thread::spawn(move || {
-                generate(pdf_dir, csv_path, last_pattern);
+                print!("generating");
+                if csv_path.exists() && pdf_dir.exists() { // TODO doesnt work for some reason?
+                    generate(pdf_dir, csv_path, last_pattern);
 
-                slint::invoke_from_event_loop(move || {
-                    if let Some(ui) = ui_handle_clone.upgrade() {
-                        AppState::get(&ui).set_current_view(2);
-                    }
-                })
-                .unwrap();
+                    slint::invoke_from_event_loop(move || {
+                        if let Some(ui) = ui_handle_clone.upgrade() {
+                            AppState::get(&ui).set_current_view(2);
+                        }
+                    }).unwrap();
+                }
             });
         }
     });

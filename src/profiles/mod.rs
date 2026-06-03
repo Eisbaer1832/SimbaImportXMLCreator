@@ -60,6 +60,7 @@ pub fn delete_profile(name: String) -> Vec<Profile> {
     for i in 0..ps.len() {
         if ps[i].name == name {
             ps.remove(i);
+            break;
         }
     }
 

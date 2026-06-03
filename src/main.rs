@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 pub mod ui;
 pub mod read_ids;
 pub mod utils;

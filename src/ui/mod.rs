@@ -230,9 +230,11 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
         let csv_path_clone = csv_path.clone();
         let ui_handle = ui.clone_strong();
         let column_ref = Rc::clone(&last_column);
+        let csv_name_ref = Rc::clone(&all_csv_names);
         move |column| {
             *column_ref.borrow_mut() = column.to_string();
             let csv_names = get_csv_ids(csv_path_clone.borrow().clone(), String::from(column));
+            *csv_name_ref.borrow_mut() = csv_names.clone();
             AppState::get(&ui_handle).set_csv_names(
                 ModelRc::new(VecModel::from(
                     csv_names.into_iter().map(|m| {
@@ -240,6 +242,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
                     }).collect::<Vec<MatchedPattern>>()
                 ))
             );
+            ui_handle.invoke_filter(SharedString::from(<RefCell<String> as Clone>::clone(&Rc::clone(&last_pattern)).into_inner()));
         }
     });
 

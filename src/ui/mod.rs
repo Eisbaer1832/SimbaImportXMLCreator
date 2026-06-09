@@ -23,6 +23,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
     let all_pdf_names = Rc::new(RefCell::new(Vec::<String>::new()));
     let all_csv_names = Rc::new(RefCell::new(Vec::<String>::new()));
     let last_pattern = Rc::new(RefCell::new(String::new()));
+    let last_column = Rc::new(RefCell::new(String::from("Buchungstext")));
     let name = Rc::new(RefCell::new(String::new()));
     let mut initial_names: Vec<SharedString> = profiles.iter().map(|p| SharedString::from(p.name.as_str())).collect();
     initial_names.push(SharedString::from("Neu"));
@@ -90,7 +91,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
             }
             let ui = ui_handle.unwrap();
             let pdf_names = get_pdf_ids(pdf_dir_clone.borrow().clone());
-            let csv_names = get_csv_ids(csv_path_clone.borrow().clone());
+            let csv_names = get_csv_ids(csv_path_clone.borrow().clone(), String::from("Buchungstext"));
 
             *all_pdf_names.borrow_mut() = pdf_names.clone();
             *all_csv_names.borrow_mut() = csv_names.clone();
@@ -118,7 +119,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
             } else {
                 AppState::get(&ui).set_current_view(2);
                 let p = profiles.iter().find(|val| val.name == profile.to_string()).unwrap();
-                generate(pdf_dir, csv_path, p.pattern.clone());
+                generate(pdf_dir, csv_path, p.pattern.clone(), p.column.clone());
             }
         }});
 
@@ -131,20 +132,25 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
     let ui_handle = ui.as_weak();
     ui.on_generate({
         let last_pattern_ref = Rc::clone(&last_pattern);
+        let last_column_ref = Rc::clone(&last_column);
+        println!("{:?}",last_column_ref);
         let name_ref = Rc::clone(&name);
         let ui_handle_ref = ui_handle.clone();
+        let csv_path_clone = csv_path.clone();
         move || {
             let pdf_dir = pdf_dir.borrow().clone();
-            let csv_path = csv_path.borrow().clone();
+            let csv_path = csv_path_clone.borrow().clone();
             let last_pattern = last_pattern_ref.borrow().clone();
+            let last_column = last_column_ref.borrow().clone();
+            println!("{}", last_column);
             let ui_handle_clone = ui_handle_ref.clone();
 
-            set_profiles(name_ref.borrow().clone(), last_pattern_ref.borrow().clone()).expect("Couldn't save profile");
+            set_profiles(name_ref.borrow().clone(), last_pattern_ref.borrow().clone(), last_column_ref.borrow().clone()).expect("Couldn't save profile");
 
             thread::spawn(move || {
                 print!("generating");
                 if csv_path.exists() && pdf_dir.exists() { // TODO doesnt work for some reason?
-                    generate(pdf_dir, csv_path, last_pattern);
+                    generate(pdf_dir, csv_path, last_pattern, last_column);
 
                     slint::invoke_from_event_loop(move || {
                         if let Some(ui) = ui_handle_clone.upgrade() {
@@ -217,6 +223,23 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
                 let dialog = dialog.clone();
                 move || { dialog.hide().unwrap(); }
             });
+        }
+    });
+
+    ui.on_update_ids( {
+        let csv_path_clone = csv_path.clone();
+        let ui_handle = ui.clone_strong();
+        let column_ref = Rc::clone(&last_column);
+        move |column| {
+            *column_ref.borrow_mut() = column.to_string();
+            let csv_names = get_csv_ids(csv_path_clone.borrow().clone(), String::from(column));
+            AppState::get(&ui_handle).set_csv_names(
+                ModelRc::new(VecModel::from(
+                    csv_names.into_iter().map(|m| {
+                        MatchedPattern { before: SharedString::from(m.to_string()), matched: SharedString::from(""), after: SharedString::from(""), partner: false }
+                    }).collect::<Vec<MatchedPattern>>()
+                ))
+            );
         }
     });
 

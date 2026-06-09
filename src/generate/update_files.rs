@@ -9,7 +9,7 @@ use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use csv::{QuoteStyle, WriterBuilder};
 
-pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex) -> Result<(), Box<dyn Error>> {
+pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex, column: String) -> Result<(), Box<dyn Error>> {
     let (first_line, mut reader) = get_csv_reader(csv);
 
     let headers = reader.headers()?.clone();
@@ -28,7 +28,8 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
                 let mut new_record = record.clone();
 
                 // get Buchungstext
-                let buchungs_text_index = headers.iter().position(|h| h == "Buchungstext").expect("Konnte keinen Buchungstext header finden");
+                println!("{}", column);
+                let buchungs_text_index = headers.iter().position(|h| h == column).expect("Konnte keinen Buchungstext header finden");
                 let text : String = record.get(buchungs_text_index).expect("Kein Buchungstext vorhanden").to_string();
 
                 let id = pattern.find(text.as_str())

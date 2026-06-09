@@ -8,7 +8,7 @@ use crate::read_ids::get_pdf_ids;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub fn generate(pdf_path: PathBuf, csv_path: PathBuf, pattern: String) {
+pub fn generate(pdf_path: PathBuf, csv_path: PathBuf, pattern: String, column: String) {
     let regex = easy_regex(&*pattern).expect("invalid regex");
 
     let mut ids: Vec<String> = get_pdf_ids(pdf_path.clone());
@@ -20,7 +20,7 @@ pub fn generate(pdf_path: PathBuf, csv_path: PathBuf, pattern: String) {
     }).collect();
 
     let export_path = pdf_path.parent().unwrap().to_path_buf();
-    update_csv(ids, csv_path, export_path.clone(), regex.clone()).expect("couldn't update csv");
+    update_csv(ids, csv_path, export_path.clone(), regex.clone(), column).expect("couldn't update csv");
 
     let csv_result_name = &export_path.join("EXTF_Import-Buchungsstapel.csv");
     let csv_result_path = Path::new(csv_result_name);

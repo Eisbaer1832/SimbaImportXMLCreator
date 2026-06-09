@@ -132,42 +132,57 @@ component ChooseNamespace inherits Rectangle {
     callback filter(string);
     callback update_name(string);
     callback generate();
+    callback update_ids(string);
 
     VerticalBox {
-        HorizontalBox {
-            Button {
-                clicked => {AppState.current-view = 0}
-                text: "Zurück";
-            }
-            LineEdit {
-                edited(text) => {filter(self.text)}
-                horizontal-alignment: TextHorizontalAlignment.center;
-                placeholder-text: "Filter";
-            }
-            LineEdit {
-                width: 200px;
-                edited(text) => {update_name(self.text)}
-                horizontal-alignment: TextHorizontalAlignment.center;
-                placeholder-text: "Mandant";
-            }
+        padding: 0px;
+        Rectangle {
+            background: #EFF0F1;
+            HorizontalBox {
+                padding: 10px;
+                Button {
+                    clicked => {AppState.current-view = 0}
+                    text: "Zurück";
+                }
 
-            Button {
-                clicked => {generate()}
-                text: "Weiter";
+                LineEdit {
+                    edited(text) => {filter(self.text)}
+                    horizontal-alignment: TextHorizontalAlignment.center;
+                    placeholder-text: "Filter";
+                }
+                ComboBox {
+                    height:30px;
+                    width: 200px;
+                    model: ["Buchungstext", "Belegfeld 1", "Konto"];
+                    current-index: 0;
+                    selected(value) => {
+                        update_ids(value)
+                    }
+                }
+                LineEdit {
+                    width: 200px;
+                    edited(text) => {update_name(self.text)}
+                    horizontal-alignment: TextHorizontalAlignment.center;
+                    placeholder-text: "Mandant";
+                }
+
+                Button {
+                    clicked => {generate()}
+                    text: "Weiter";
+                }
             }
         }
-
         HorizontalLayout {
             spacing: 10px;
             visible: true;
             accessible-role: AccessibleRole.none;
             alignment: LayoutAlignment.stretch;
             padding: 10px;
-
-            Rectangle {
-                border-radius: Platform.style-name == "fluent" ? 4px : 2px;
-                border-width: Platform.style-name == "fluent" ? 2px : 1px;
-                border-color: Palette.border;
+            VerticalLayout {
+                Text {
+                    horizontal-alignment: TextHorizontalAlignment.center;
+                    text: "PDFs";
+                }
                 VerticalLayout {
                     padding: 10px;
                     ListView {
@@ -184,6 +199,7 @@ component ChooseNamespace inherits Rectangle {
                             }
                         }
                     }
+
                 }
             }
 
@@ -191,10 +207,12 @@ component ChooseNamespace inherits Rectangle {
                 width: 1px;
                 background: #ccc;
             }
-            Rectangle {
-                border-radius: Platform.style-name == "fluent" ? 4px : 2px;
-                border-width: Platform.style-name == "fluent" ? 2px : 1px;
-                border-color: Palette.border;
+            VerticalLayout {
+
+                Text {
+                    horizontal-alignment: TextHorizontalAlignment.center;
+                    text: "CSV";
+                }
                 VerticalLayout {
                     padding: 10px;
                     ListView  {
@@ -218,7 +236,6 @@ component ChooseNamespace inherits Rectangle {
 
 
 component Finish inherits Rectangle {
-    //TODO this should properly only appear, after the zipping finished
     VerticalLayout {
         alignment: center;
         spacing: 15px;
@@ -270,6 +287,7 @@ export component AppWindow inherits Window {
     callback change_profiles_location();
     callback update_name(string);
     callback delete_profile();
+    callback update_ids(string);
 
     title: @tr("Simba Importbearbeitung");
 
@@ -287,6 +305,7 @@ export component AppWindow inherits Window {
         generate() => {
             generate();
         }
+        update_ids(text) => {root.update_ids(text)}
     }
     if AppState.current-view == 2: Finish {}
 }

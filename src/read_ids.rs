@@ -17,7 +17,7 @@ pub fn get_pdf_ids(pdf_path: PathBuf) -> Vec<String> {
 }
 
 
-pub fn get_csv_ids(csv_path: PathBuf) -> Vec<String> {
+pub fn get_csv_ids(csv_path: PathBuf, column: String) -> Vec<String> {
     let (_first_line, mut reader) = get_csv_reader(csv_path);
     let mut ids: Vec<String> = Vec::new();
 
@@ -27,8 +27,8 @@ pub fn get_csv_ids(csv_path: PathBuf) -> Vec<String> {
     let headers = reader.headers().expect("can't get headers").clone();
     let col_index = headers
         .iter()
-        .position(|h| h == "Buchungstext")
-        .expect("Buchungstext konnte nicht gefunden werden");
+        .position(|h| h == column)
+        .expect(&*(column + " konnte nicht gefunden werden"));
 
     for result in reader.records() {
         if let Some(value) = result.unwrap().get(col_index) {

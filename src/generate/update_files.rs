@@ -1,8 +1,8 @@
-use crate::utils::get_csv_reader;
+use crate::readers::{get_csv_reader, get_scs_reader};
 use chrono::Local;
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
-use regex::Regex;
+use regex::{Regex};
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -58,6 +58,56 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
 }
 
 
+pub fn update_scs(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex) -> Result<(), Box<dyn Error>> {
+    let (first_line, mut reader) = get_scs_reader(csv);
+
+    let headers = reader.headers()?.clone();
+
+    let mut raw_writer = BufWriter::new(File::create(out_dir.display().to_string() + "/Import-Buchungsstapel.scs")?);
+    raw_writer.write(first_line.as_bytes())?; // add the metadata line to the new file
+    let mut wtr = WriterBuilder::new()
+        .delimiter(b';')
+        .quote_style(QuoteStyle::Never)
+        .from_writer(raw_writer);
+    wtr.write_record(&headers)?;
+
+    println!("{:?}", ids);
+    for result in reader.records() {
+        match result {
+            Ok(record) => {
+                let mut new_record = record.clone();
+
+                // get Buchungstext
+                let mut id = [13, 12]
+                    .iter()
+                    .filter_map(|&col| record.get(col))
+                    .find_map(|val| pattern.find(val).map(|m| m.as_str().to_lowercase()))
+                    .unwrap_or("".to_string());
+                id = id.replace("_", " ");
+
+                println!("{}", id);
+                // if the id corresponds to a PDF, add the PDF link
+                if ids.contains(&(id.clone())) {
+                    println!("found: {} {}", pattern, id);
+
+                    let link_index = 28;
+                    let t = format!("{}.pdf", id);
+                    new_record = record
+                        .iter()
+                        .enumerate()
+                        .map(|(i,val)| if i == link_index {t.clone()} else { val.to_string() })
+                        .collect();
+                }
+                wtr.write_record(&new_record)?;
+            },
+            Err(err) => println!("{}", err)
+        }
+    }
+    wtr.flush()?;
+    Ok(())
+}
+
+
 pub fn generate_xml(ids: Vec<String>, pdf_path: PathBuf, pattern: Regex) -> Result<(), Box<dyn Error>> {
     let file = File::create(pdf_path.display().to_string() + "/document.xml")?;
     let writer = BufWriter::new(file);
@@ -84,8 +134,10 @@ pub fn generate_xml(ids: Vec<String>, pdf_path: PathBuf, pattern: Regex) -> Resu
     // add actual PDF links
     writer.write_event(Event::Start(BytesStart::new("content")))?;
     for id in ids {
-        println!("{}", pattern);
-        let id_extensionless =  pattern.find(&*id).unwrap().as_str().to_lowercase();
+        println!("{}", id);
+        let id_extensionless = pattern.find(&*id)
+            .map(|m| m.as_str().to_lowercase())
+            .unwrap_or_else(|| id.to_lowercase());
 
         let mut document = BytesStart::new("document");
         document.push_attribute(("guid", id_extensionless.as_str()));

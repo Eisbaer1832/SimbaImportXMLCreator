@@ -8,7 +8,6 @@ struct MatchedPattern {
 }
 
 
-// In AppState:
 export global AppState {
     in-out property <string> csv: "";
     in-out property <string> pdfs: "";
@@ -78,7 +77,7 @@ component FileSelect inherits Rectangle  {
                 }
                 Button {
                     height:30px;
-                    text: "Buchungsstapel.csv wählen";
+                    text: "Buchungsstapel (.csv/.scs) wählen";
                     clicked => {
                         request-csv-file();
                     }

@@ -1,17 +1,15 @@
 use crate::filter::filter;
 use crate::generate::generate;
+use crate::get_ids::get_buchungsstapel_ids;
 use crate::get_pdf_ids;
 use crate::profiles::settings::set_profile_location;
 use crate::profiles::{delete_profile, set_profiles, Profile};
-use crate::read_ids::get_csv_ids;
 use native_dialog::DialogBuilder;
 use slint::{ModelRc, SharedString, ToSharedString, VecModel};
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::thread;
-
-
 
 slint::include_modules!();
 pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
@@ -55,7 +53,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
         let csv_path = Rc::clone(&csv_path);
         move || {
             let ui = ui_handle.unwrap();
-            *csv_path.borrow_mut() = file_picker(String::from("csv"));
+            *csv_path.borrow_mut() = file_picker(Box::from(["csv", "scs"]));
 
             AppState::get(&ui).set_csv(csv_path.borrow().display().to_shared_string())
         }
@@ -91,7 +89,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
             }
             let ui = ui_handle.unwrap();
             let pdf_names = get_pdf_ids(pdf_dir_clone.borrow().clone());
-            let csv_names = get_csv_ids(csv_path_clone.borrow().clone(), String::from("Buchungstext"));
+            let csv_names = get_buchungsstapel_ids(csv_path_clone.borrow().clone(), String::from("Buchungstext"));
 
             *all_pdf_names.borrow_mut() = pdf_names.clone();
             *all_csv_names.borrow_mut() = csv_names.clone();
@@ -124,7 +122,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
         }});
 
     ui.on_change_profiles_location(|| {
-        let profile_location = file_picker(String::from("json"));
+        let profile_location = file_picker(Box::from(["json"]));
         set_profile_location(profile_location);
         println!("Profiles location changed!");
     });
@@ -233,7 +231,7 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
         let csv_name_ref = Rc::clone(&all_csv_names);
         move |column| {
             *column_ref.borrow_mut() = column.to_string();
-            let csv_names = get_csv_ids(csv_path_clone.borrow().clone(), String::from(column));
+            let csv_names = get_buchungsstapel_ids(csv_path_clone.borrow().clone(), String::from(column));
             *csv_name_ref.borrow_mut() = csv_names.clone();
             AppState::get(&ui_handle).set_csv_names(
                 ModelRc::new(VecModel::from(
@@ -249,9 +247,14 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
     ui.run().expect("Failed to init window");
 }
 
-fn file_picker(file_type: String) -> PathBuf {
-    let path = DialogBuilder::file()
-        .add_filter(&file_type, [&file_type])
+fn file_picker(file_types: Box<[&str]>) -> PathBuf {
+    let mut builder = DialogBuilder::file();
+
+    for ext in file_types.iter() {
+        builder = builder.add_filter(ext.to_uppercase(), &[ext]);
+    }
+
+    let path = builder
         .open_single_file()
         .show()
         .unwrap();

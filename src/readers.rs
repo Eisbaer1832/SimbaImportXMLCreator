@@ -21,3 +21,24 @@ pub fn get_csv_reader(csv: PathBuf) -> (String, Reader<BufReader<DecodeReaderByt
 
     (first_line, reader)
 }
+pub fn get_scs_reader(scs: PathBuf) -> (String, Reader<BufReader<DecodeReaderBytes<File, Vec<u8>>>>) {
+    let file = File::open(scs).expect("Could not open scs file");
+    let transcoded_reader = DecodeReaderBytesBuilder::new()
+        .encoding(Some(WINDOWS_1252))
+        .build(file);
+
+    let mut reader = BufReader::new(transcoded_reader);
+    let mut first_line = String::new();
+    // consume the first 4 lines, to ignore metadata
+    for _i in 0..4 {
+        reader.read_line(&mut first_line).expect("Can't read first line");
+    }
+
+    let reader = ReaderBuilder::new()
+        .delimiter(b';')
+        .flexible(true)
+        .quoting(false)
+        .from_reader(reader);
+
+    (first_line, reader)
+}

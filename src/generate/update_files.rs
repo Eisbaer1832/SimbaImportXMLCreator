@@ -28,13 +28,17 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
                 let mut new_record = record.clone();
 
                 // get Buchungstext
-                println!("{}", column);
                 let buchungs_text_index = headers.iter().position(|h| h == column).expect("Konnte keinen Buchungstext header finden");
                 let text : String = record.get(buchungs_text_index).expect("Kein Buchungstext vorhanden").to_string();
 
-                let id = pattern.find(text.as_str())
-                    .expect("cant get string").as_str().to_string().to_lowercase();
-
+                let id = pattern
+                    .find(text.as_str())
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_else(|| {
+                        println!("Can't find match in {}", text);
+                        text.clone()
+                    })
+                    .to_lowercase();
 
                 // if the id corresponds to a PDF, add the PDF link
                 if ids.contains(&(id.clone())) {

@@ -9,7 +9,7 @@ use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use csv::{QuoteStyle, WriterBuilder};
 
-pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex, column: String) -> Result<(), Box<dyn Error>> {
+pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex, column: String) -> Result<(usize, i32), Box<dyn Error>> {
     let (first_line, mut reader) = get_csv_reader(csv);
 
     let headers = reader.headers()?.clone();
@@ -22,10 +22,15 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
         .from_writer(raw_writer);
     wtr.write_record(&headers)?;
 
+    // statistics
+    let mut total_lines = 0;
+    let mut matched_lines = 0;
+
     for result in reader.records() {
         match result {
             Ok(record) => {
                 let mut new_record = record.clone();
+                total_lines += 1;
 
                 // get Buchungstext
                 let buchungs_text_index = headers.iter().position(|h| h == column).expect("Konnte keinen Buchungstext header finden");
@@ -42,6 +47,7 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
 
                 // if the id corresponds to a PDF, add the PDF link
                 if ids.contains(&(id.clone())) {
+                    matched_lines += 1;
                     println!("found: {} {}", pattern, id);
 
                     let link_index = headers.iter().position(|h| h == "Beleglink").unwrap();
@@ -58,14 +64,18 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
         }
     }
     wtr.flush()?;
-    Ok(())
+    Ok((total_lines, matched_lines))
 }
 
 
-pub fn update_scs(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex) -> Result<(), Box<dyn Error>> {
+pub fn update_scs(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex) -> Result<(usize, i32), Box<dyn Error>> {
     let (first_line, mut reader) = get_scs_reader(csv);
 
     let headers = reader.headers()?.clone();
+
+    // statistics
+    let mut total_lines = 0;
+    let mut matched_lines = 0;
 
     let mut raw_writer = BufWriter::new(File::create(out_dir.display().to_string() + "/Import-Buchungsstapel.scs")?);
     raw_writer.write(first_line.as_bytes())?; // add the metadata line to the new file
@@ -79,6 +89,7 @@ pub fn update_scs(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
     for result in reader.records() {
         match result {
             Ok(record) => {
+                total_lines += 1;
                 let mut new_record = record.clone();
 
                 // get Buchungstext
@@ -92,6 +103,7 @@ pub fn update_scs(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
                 println!("{}", id);
                 // if the id corresponds to a PDF, add the PDF link
                 if ids.contains(&(id.clone())) {
+                    matched_lines += 1;
                     println!("found: {} {}", pattern, id);
 
                     let link_index = 28;
@@ -108,7 +120,7 @@ pub fn update_scs(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
         }
     }
     wtr.flush()?;
-    Ok(())
+    Ok((total_lines, matched_lines))
 }
 
 

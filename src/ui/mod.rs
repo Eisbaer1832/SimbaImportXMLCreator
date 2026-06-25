@@ -116,10 +116,29 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
                 AppState::get(&ui).set_current_view(1);
             } else {
                 AppState::get(&ui).set_current_view(2);
-                let p = profiles.iter().find(|val| val.name == profile.to_string()).unwrap();
-                generate(pdf_dir, csv_path, p.pattern.clone(), p.column.clone());
+
+                let ui_clone = ui.as_weak();
+                let pdf_dir_clone = pdf_dir.clone();
+                let csv_path_clone = csv_path.clone();
+                let profiles_clone = profiles.clone();
+                thread::spawn(move || {
+                    let p = profiles_clone.iter().find(|val| val.name == profile.to_string()).unwrap();
+
+                    let total_buchungssaetze: usize;
+                    let total_pdfs: usize;
+                    let linked: i32;
+                    (total_buchungssaetze, total_pdfs, linked) = generate(pdf_dir_clone, csv_path_clone, p.pattern.clone(), p.column.clone());
+
+                    ui_clone.upgrade_in_event_loop(move |ui| {
+                        AppState::get(&ui).set_total_buchungssaetze(total_buchungssaetze as i32);
+                        AppState::get(&ui).set_total_pdfs(total_pdfs as i32);
+                        AppState::get(&ui).set_linked(linked);
+                        AppState::get(&ui).set_current_view(3);
+                    }).unwrap();
+                });
             }
-        }});
+        }
+    });
 
     ui.on_change_profiles_location(|| {
         let profile_location = file_picker(Box::from(["json"]));
@@ -145,14 +164,22 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
 
             set_profiles(name_ref.borrow().clone(), last_pattern_ref.borrow().clone(), last_column_ref.borrow().clone()).expect("Couldn't save profile");
 
+            AppState::get(&ui_handle_ref.upgrade().unwrap()).set_current_view(2);
+
             thread::spawn(move || {
                 print!("generating");
                 if csv_path.exists() && pdf_dir.exists() { // TODO doesnt work for some reason?
-                    generate(pdf_dir, csv_path, last_pattern, last_column);
+                    let total_buchungssaetze:usize;
+                    let total_pdfs:usize;
+                    let linked:i32;
+                    (total_buchungssaetze,total_pdfs,linked) = generate(pdf_dir, csv_path, last_pattern, last_column);
 
                     slint::invoke_from_event_loop(move || {
                         if let Some(ui) = ui_handle_clone.upgrade() {
-                            AppState::get(&ui).set_current_view(2);
+                            AppState::get(&ui).set_total_buchungssaetze(total_buchungssaetze as i32);
+                            AppState::get(&ui).set_total_pdfs(total_pdfs as i32);
+                            AppState::get(&ui).set_linked(linked);
+                            AppState::get(&ui).set_current_view(3);
                         }
                     }).unwrap();
                 }

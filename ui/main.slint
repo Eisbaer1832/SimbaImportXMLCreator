@@ -1,4 +1,4 @@
-import { ComboBox, Palette, Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox, Spinner, StandardButton, ProgressIndicator } from "std-widgets.slint";
+import { ComboBox, Palette, Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox, Spinner, StandardButton, ProgressIndicator, GridBox, StandardTableView } from "std-widgets.slint";
 
 struct MatchedPattern {
     before: string,
@@ -19,6 +19,10 @@ export global AppState {
 
     in-out property <[MatchedPattern]> csv-names;
     in-out property <[MatchedPattern]> pdf-names;
+
+    in-out property <int> total_pdfs: 0;
+    in-out property <int> total_buchungssaetze: 0;
+    in-out property <int> linked: 0;
 }
 
 component FileSelect inherits Rectangle  {
@@ -207,7 +211,6 @@ component ChooseNamespace inherits Rectangle {
                 background: #ccc;
             }
             VerticalLayout {
-
                 Text {
                     horizontal-alignment: TextHorizontalAlignment.center;
                     text: "CSV";
@@ -233,12 +236,18 @@ component ChooseNamespace inherits Rectangle {
     }
 }
 
+component Loading inherits Rectangle {
+    Spinner {
+        indeterminate: true;
+        width: 48px;
+        height: 48px;
+    }
+}
+
 
 component Finish inherits Rectangle {
     VerticalLayout {
         alignment: center;
-        spacing: 15px;
-
         Text {
             text: "Die Importdateien wurden erfolgreich erstellt!";
             font-size: 24pt;
@@ -248,6 +257,45 @@ component Finish inherits Rectangle {
             text: "Du kannst dieses Fenster jetzt schließen :)";
             font-size: 12pt;
             horizontal-alignment: center;
+        }
+        HorizontalBox {
+            padding-top: 100px;
+            VerticalLayout {
+                Text {
+                    font-size: 12pt;
+                    text: "Buchungssätze: ";
+                    horizontal-alignment: center;
+                }
+                Text {
+                    font-size: 12pt;
+                    text: "PDFs:";
+                    horizontal-alignment: center;
+                }
+                Text {
+                    font-size: 12pt;
+                    font-weight: FontWeight.extra-bold;
+                    text: "Beleglinks:";
+                    horizontal-alignment: center;
+                }
+            }
+            VerticalLayout {
+                Text {
+                    font-size: 12pt;
+                    text: AppState.total_buchungssaetze;
+                    horizontal-alignment: center;
+                }
+                 Text {
+                    font-size: 12pt;
+                    text: AppState.total_pdfs;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    font-size: 12pt;
+                    text: AppState.linked;
+                    font-weight: FontWeight.extra-bold;
+                    horizontal-alignment: center;
+                }
+            }
         }
     }
 }
@@ -306,6 +354,7 @@ export component AppWindow inherits Window {
         }
         update_ids(text) => {root.update_ids(text)}
     }
-    if AppState.current-view == 2: Finish {}
+    if AppState.current-view == 2: Loading {}
+    if AppState.current-view == 3: Finish {}
 }
 

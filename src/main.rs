@@ -34,9 +34,25 @@ fn resolve_path(path: &str) -> String {
     shellexpand::tilde(path).into_owned()
 }
 
+fn setup_panic_handling() {
+    std::panic::set_hook(Box::new(|panic_info| {
+        let msg = panic_info.to_string();
+
+        rfd::MessageDialog::new()
+            .set_title("Etwas ist schiefgelaufen :(")
+            .set_description(&format!("{msg}"))
+            .set_level(rfd::MessageLevel::Error)
+            .set_buttons(rfd::MessageButtons::Ok)
+            .show();
+
+        eprintln!("{msg}");
+    }));
+
+}
 
 fn main() {
     println!("Creating import files!");
+    setup_panic_handling();
 
     let args = Arguments::parse();
     let pdf_directory = resolve_path(&args.directory);

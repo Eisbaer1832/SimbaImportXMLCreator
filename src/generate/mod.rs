@@ -22,7 +22,7 @@ pub fn generate(pdf_path: PathBuf, csv_path: PathBuf, pattern: String, column: S
     generate_xml(ids.clone(), pdf_path.clone(), regex.clone()).expect("couldn't create xml");
 
     ids = ids.iter().filter_map(|id| {
-        regex.find(id).map(|m| m.as_str().to_string().to_lowercase().replace("_", " "))
+        regex.find(id).map(|m| m.as_str().to_string().to_lowercase())
     }).collect();
     pdfs_matched = ids.len();
     

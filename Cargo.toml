@@ -21,6 +21,10 @@ serde = { version = "1.0.228", features = ["derive"] }
 preferences = "2.0.0"
 showfile = "0.1.1"
 rfd = "0.17.2"
+smb = "0.11.2"
+reqwest = "0.12.28"
+base64 = "0.22.1"
+tokio = "1.52.3"
 
 [build-dependencies]
 slint-build = "1.16.0"

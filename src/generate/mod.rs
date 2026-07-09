@@ -1,5 +1,6 @@
 mod update_files;
 mod zip;
+pub mod instant_import;
 
 use std::string::String;
 use crate::filter::easy_regex;
@@ -8,9 +9,11 @@ use crate::generate::zip::zip_directory;
 use crate::get_ids::get_pdf_ids;
 use std::fs;
 use std::path::{Path, PathBuf};
+use crate::generate::instant_import::instant_import;
+use crate::profiles::Profile;
 
-pub fn generate(pdf_path: PathBuf, csv_path: PathBuf, pattern: String, column: String) -> (usize, usize, i32) {
-    let regex = easy_regex(&*pattern).expect("invalid regex");
+pub fn generate(pdf_path: PathBuf, csv_path: PathBuf, profile: Profile, do_instant_import: bool) -> (usize, usize, i32) {
+    let regex = easy_regex(&*profile.pattern).expect("invalid regex");
     let mut ids: Vec<String> = get_pdf_ids(pdf_path.clone());
 
     // statistics
@@ -33,7 +36,7 @@ pub fn generate(pdf_path: PathBuf, csv_path: PathBuf, pattern: String, column: S
 
 
     if csv_path.extension() == Some(std::ffi::OsStr::new("csv")) {
-        (total_lines, matched_lines) = update_csv(ids, csv_path, export_path.clone(), regex.clone(), column).expect("couldn't update csv");
+        (total_lines, matched_lines) = update_csv(ids, csv_path, export_path.clone(), regex.clone(), profile.column).expect("couldn't update csv");
         name = "EXTF_Import-Buchungsstapel.csv"
     }else {
         is_csv = false;
@@ -51,7 +54,18 @@ pub fn generate(pdf_path: PathBuf, csv_path: PathBuf, pattern: String, column: S
     zip_directory(pdf_path.as_path(), csv_result_path, result_path,regex, is_csv).expect("zipping failed");
 
     fs::remove_file(csv_result_path).unwrap();
-    showfile::show_path_in_file_manager(result_path);
+
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+
+    if do_instant_import {
+        rt.block_on(instant_import(profile.nr, &*result_path));
+    }else {
+        showfile::show_path_in_file_manager(result_path);
+    }
 
     (total_lines, pdfs_total, matched_lines)
 }

@@ -1,4 +1,4 @@
-import { ComboBox, Palette, Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox, Spinner, StandardButton, ProgressIndicator, GridBox, StandardTableView } from "std-widgets.slint";
+import { ComboBox, Palette, Button, VerticalBox, ListView, AboutSlint, LineEdit, HorizontalBox, Spinner, StandardButton, ProgressIndicator, GridBox, StandardTableView, CheckBox } from "std-widgets.slint";
 
 struct MatchedPattern {
     before: string,
@@ -23,6 +23,10 @@ export global AppState {
     in-out property <int> total_pdfs: 0;
     in-out property <int> total_buchungssaetze: 0;
     in-out property <int> linked: 0;
+
+    in-out property <bool> instant-import: true;
+
+    in-out property <string> mandantennummer;
 }
 
 component FileSelect inherits Rectangle  {
@@ -120,6 +124,10 @@ component FileSelect inherits Rectangle  {
             }
         }
 
+        CheckBox {
+            checked: AppState.instant-import;
+            text: "Buchungsdaten direkt in SIMBA importieren";
+        }
         Button {
             height: 30px;
             text: "Weiter";
@@ -167,6 +175,13 @@ component ChooseNamespace inherits Rectangle {
                     edited(text) => {update_name(self.text)}
                     horizontal-alignment: TextHorizontalAlignment.center;
                     placeholder-text: "Mandant";
+                }
+
+                LineEdit {
+                    width: 100px;
+                    edited(text) => {AppState.mandantennummer = self.text}
+                    horizontal-alignment: TextHorizontalAlignment.center;
+                    placeholder-text: "Nummer";
                 }
 
                 Button {

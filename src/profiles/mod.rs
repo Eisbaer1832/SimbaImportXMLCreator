@@ -13,6 +13,7 @@ pub struct Profile {
     pub(crate) name: String,
     pub(crate) pattern: String,
     pub column: String,
+    pub nr: String
 }
 
 pub fn get_profiles() -> Result<Vec<Profile>> {
@@ -38,12 +39,12 @@ pub fn get_profiles() -> Result<Vec<Profile>> {
     }
 }
 
-pub fn set_profiles(n:String, p: String, c: String) -> Result<()> {
+pub fn set_profiles(n:String, p: String, c: String, num: String) -> Result<()> {
     let profile_location = fetch_profile_location();
     let mut json_data = fs::read_to_string(profile_location.clone()).unwrap();
     let mut ps: Vec<Profile> = serde_json::from_str(&*json_data).expect("JSON was mallformed");
 
-    ps.push(Profile {name: n, pattern: p, column: c});
+    ps.push(Profile {name: n, pattern: p, column: c, nr : num});
 
     json_data = serde_json::to_string_pretty(&ps)?;
 

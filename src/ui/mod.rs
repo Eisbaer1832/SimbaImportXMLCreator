@@ -121,13 +121,17 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
                 let pdf_dir_clone = pdf_dir.clone();
                 let csv_path_clone = csv_path.clone();
                 let profiles_clone = profiles.clone();
+                let instant_import = AppState::get(&ui).get_instant_import();
+                println!("instant import: {}", instant_import);
+
                 thread::spawn(move || {
                     let p = profiles_clone.iter().find(|val| val.name == profile.to_string()).unwrap();
 
                     let total_buchungssaetze: usize;
                     let total_pdfs: usize;
                     let linked: i32;
-                    (total_buchungssaetze, total_pdfs, linked) = generate(pdf_dir_clone, csv_path_clone, p.pattern.clone(), p.column.clone());
+
+                    (total_buchungssaetze, total_pdfs, linked) = generate(pdf_dir_clone, csv_path_clone, p.clone(), instant_import);
 
                     ui_clone.upgrade_in_event_loop(move |ui| {
                         AppState::get(&ui).set_total_buchungssaetze(total_buchungssaetze as i32);
@@ -161,9 +165,9 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
             let last_column = last_column_ref.borrow().clone();
             println!("{}", last_column);
             let ui_handle_clone = ui_handle_ref.clone();
-
-            set_profiles(name_ref.borrow().clone(), last_pattern_ref.borrow().clone(), last_column_ref.borrow().clone()).expect("Couldn't save profile");
-
+            let nummer = AppState::get(&ui_handle_clone.upgrade().unwrap()).get_mandantennummer();
+            set_profiles(name_ref.borrow().clone(), last_pattern_ref.borrow().clone(), last_column_ref.borrow().clone(), nummer.to_string()).expect("Couldn't save profile");
+            let name = name_ref.borrow().clone();
             AppState::get(&ui_handle_ref.upgrade().unwrap()).set_current_view(2);
 
             thread::spawn(move || {
@@ -172,7 +176,20 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
                     let total_buchungssaetze:usize;
                     let total_pdfs:usize;
                     let linked:i32;
-                    (total_buchungssaetze,total_pdfs,linked) = generate(pdf_dir, csv_path, last_pattern, last_column);
+                    let instant_import = AppState::get(&ui_handle_clone.clone().upgrade().unwrap()).get_instant_import();
+                    let nummer = AppState::get(&ui_handle_clone.upgrade().unwrap()).get_mandantennummer();
+
+                    (total_buchungssaetze, total_pdfs, linked) = generate(
+                        pdf_dir,
+                        csv_path,
+                        Profile {
+                            name,
+                            pattern: last_pattern,
+                            column: last_column,
+                            nr: nummer.to_string(),
+                        },
+                        instant_import,
+                    );
 
                     slint::invoke_from_event_loop(move || {
                         if let Some(ui) = ui_handle_clone.upgrade() {

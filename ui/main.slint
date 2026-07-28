@@ -335,10 +335,23 @@ export component AppWindow inherits Window {
     callback update_name(string);
     callback delete_profile();
     callback update_ids(string);
+    callback remove_ktr_kst();
 
     title: @tr("Simba Importbearbeitung");
 
+
+    if AppState.current-view == 0:MenuBar {
+        Menu {
+                title: @tr("PDS Dateien");
+                MenuItem {
+                    title: @tr("KSt/KTR Bereinigen");
+                    activated => { remove_ktr_kst() }
+                }
+            }
+    }
+    
     if AppState.current-view == 0: FileSelect {
+
         request-pdf-dir => { root.request-pdf-dir(); }
         request-csv-file => { root.request-csv-file(); }
         get_names => { root.get-names(); }

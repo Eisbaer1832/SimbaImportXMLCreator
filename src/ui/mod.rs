@@ -10,6 +10,7 @@ use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::thread;
+use crate::pds_tools::cleanup_pds;
 
 slint::include_modules!();
 pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
@@ -268,6 +269,23 @@ pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
                 ))
             );
             ui_handle.invoke_filter(SharedString::from(<RefCell<String> as Clone>::clone(&Rc::clone(&last_pattern)).into_inner()));
+        }
+    });
+
+
+    ui.on_remove_ktr_kst({
+        let ui = ui.clone_strong();
+        move || {
+            AppState::get(&ui).set_current_view(2);
+            let ui = ui.as_weak();
+            thread::spawn(move || {
+                cleanup_pds(
+                    file_picker(Box::from([".zip"]))
+                );
+                ui.upgrade_in_event_loop(move |ui| {
+                    AppState::get(&ui).set_current_view(3);
+                }).unwrap();
+            });
         }
     });
 

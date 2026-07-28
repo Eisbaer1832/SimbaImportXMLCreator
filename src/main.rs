@@ -6,7 +6,7 @@ pub mod readers;
 pub mod generate;
 mod filter;
 pub mod profiles;
-
+pub mod pds_tools;
 
 use crate::profiles::get_profiles;
 use crate::get_ids::get_pdf_ids;

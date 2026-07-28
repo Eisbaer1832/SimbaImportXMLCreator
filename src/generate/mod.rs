@@ -1,5 +1,5 @@
 mod update_files;
-mod zip;
+pub mod zip;
 
 use std::string::String;
 use crate::filter::easy_regex;

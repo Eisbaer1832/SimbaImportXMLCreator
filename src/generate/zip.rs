@@ -1,8 +1,9 @@
 use regex::Regex;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 pub(crate) use zip::{write::FileOptions, ZipWriter};
+use zip::read::ZipFile;
 
 pub fn zip_directory(src_dir: &Path, csv_file: &Path, dst_file: &Path, pattern: Regex, is_csv: bool) -> io::Result<()> {
     let file = File::create(dst_file)?;
@@ -34,7 +35,7 @@ fn add_csv(csv_file: &Path, zip: &mut ZipWriter<File>, options: FileOptions) -> 
     Ok(())
 }
 
-fn add_dir_to_zip<W: Write + io::Seek>(
+pub fn add_dir_to_zip<W: Write + io::Seek>(
     zip: &mut ZipWriter<W>,
     base: &Path,
     current: &Path,
@@ -72,4 +73,33 @@ fn add_dir_to_zip<W: Write + io::Seek>(
         }
     }
     Ok(())
+}
+
+pub fn unzip_with_interrupt(path:PathBuf, interrupt: fn(file: ZipFile, outpath: PathBuf), at: String) {
+    let file = File::open(path.clone()).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let output_dir = path.parent().unwrap().join("temp").to_path_buf();
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i).unwrap();
+        let outpath = match file.enclosed_name() {
+            Some(p) => output_dir.join(p),
+            None => continue,
+        };
+
+        if file.is_dir() {
+            fs::create_dir_all(&outpath).unwrap();
+        } else {
+            if let Some(parent) = outpath.parent() {
+                if !parent.exists() {
+                    fs::create_dir_all(parent).unwrap();
+                }
+            }
+            if file.name().ends_with(at.as_str()) {
+                interrupt(file, outpath);
+            }else {
+                let mut outfile = File::create(&outpath).unwrap();
+                io::copy(&mut file, &mut outfile).unwrap();
+            }
+        }
+    }
 }

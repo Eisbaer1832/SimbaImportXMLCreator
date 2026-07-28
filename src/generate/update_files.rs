@@ -46,6 +46,7 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
                     .to_lowercase();
 
                 // if the id corresponds to a PDF, add the PDF link
+                println!("checking id {}", id);
                 if ids.contains(&(id.clone())) {
                     matched_lines += 1;
                     println!("found: {} {}", pattern, id);

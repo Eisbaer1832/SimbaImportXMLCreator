@@ -1,5 +1,5 @@
 use std::io::Write;
-use std::fs::{write, File};
+use std::fs::{remove_dir_all, write, File};
 use std::io;
 use std::io::{Cursor, Read};
 use std::path::PathBuf;
@@ -19,7 +19,8 @@ pub fn cleanup_pds(path: PathBuf) {
     let mut zip = ZipWriter::new(zip_file);
     let options = FileOptions::default().compression_method(CompressionMethod::Deflated);
 
-    path.parent().unwrap().join("temp").read_dir().unwrap().for_each(|entry| {
+    let tmp_dir = path.parent().unwrap().join("temp");
+    tmp_dir.read_dir().unwrap().for_each(|entry| {
 
         let p = entry.unwrap().path();
         let file = File::open(&p).unwrap();
@@ -31,7 +32,7 @@ pub fn cleanup_pds(path: PathBuf) {
     });
 
     zip.finish().expect("cant finish zip");
-
+    remove_dir_all(tmp_dir).unwrap();
     showfile::show_path_in_file_manager(zip_path);
 }
 

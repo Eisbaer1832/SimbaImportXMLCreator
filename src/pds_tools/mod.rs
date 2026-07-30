@@ -1,15 +1,13 @@
 use std::io::Write;
-use std::fs::{remove_dir_all, write, File};
+use std::fs::{remove_dir_all, File};
 use std::io;
-use std::io::{Cursor, Read};
+use std::io::Read;
 use std::path::PathBuf;
 use regex::Regex;
 use zip::read::ZipFile;
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipWriter};
-use crate::generate;
-use crate::generate::zip::{add_dir_to_zip, unzip_with_interrupt, zip_directory};
-use crate::ui::MatchedPattern;
+use crate::generate::zip::{unzip_with_interrupt};
 
 pub fn cleanup_pds(path: PathBuf) {
     unzip_with_interrupt(path.clone(), |file, path | remove_kst_ktr(file, path), String::from(".xml"));

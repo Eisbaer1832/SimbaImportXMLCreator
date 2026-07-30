@@ -59,8 +59,7 @@ pub fn add_dir_to_zip<W: Write + io::Seek>(
             add_dir_to_zip(zip, base, &path, options, pattern.clone(), is_csv)?; // recursion
         } else {
             if name.ends_with("pdf") || name.ends_with("PDF") {
-                let n = pattern.find(&*name).map(|name| name.as_str()).unwrap_or(&*name)
-                    .replace("_", " ");
+                let n = pattern.find(&*name).map(|name| name.as_str()).unwrap_or(&*name);
                 zip.start_file(subdir.to_owned() + &*n.to_owned().to_lowercase() + ".pdf", *options)?;
             }else {
                 zip.start_file(subdir.to_owned() + &*name.into_owned(), *options)?;

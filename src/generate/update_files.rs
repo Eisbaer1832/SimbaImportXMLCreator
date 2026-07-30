@@ -94,12 +94,11 @@ pub fn update_scs(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
                 let mut new_record = record.clone();
 
                 // get Buchungstext
-                let mut id = [13, 12]
+                let id = [13, 12]
                     .iter()
                     .filter_map(|&col| record.get(col))
                     .find_map(|val| pattern.find(val).map(|m| m.as_str().to_lowercase()))
                     .unwrap_or("".to_string());
-                id = id.replace("_", " ");
 
                 println!("{}", id);
                 // if the id corresponds to a PDF, add the PDF link

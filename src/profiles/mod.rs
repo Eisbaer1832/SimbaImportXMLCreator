@@ -7,7 +7,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[derive(Clone)]
 pub struct Profile {
     pub(crate) name: String,

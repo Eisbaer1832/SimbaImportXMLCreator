@@ -14,7 +14,6 @@ use crate::pds_tools::cleanup_pds;
 
 slint::include_modules!();
 pub fn ui(pdf_directory: String, csv_file: String, profiles: Vec<Profile>) {
-    println!("{}", pdf_directory);
     let ui = AppWindow::new().expect("Ouch, slint somehow didn't create the window");
 
     let csv_path = Rc::new(RefCell::new(PathBuf::from(csv_file)));

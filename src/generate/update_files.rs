@@ -46,10 +46,8 @@ pub fn update_csv(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
                     .to_lowercase();
 
                 // if the id corresponds to a PDF, add the PDF link
-                println!("checking id {}", id);
                 if ids.contains(&(id.clone())) {
                     matched_lines += 1;
-                    println!("found: {} {}", pattern, id);
 
                     let link_index = headers.iter().position(|h| h == "Beleglink").unwrap();
                     let t = format!("{}.pdf", id);
@@ -86,7 +84,6 @@ pub fn update_scs(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
         .from_writer(raw_writer);
     wtr.write_record(&headers)?;
 
-    println!("{:?}", ids);
     for result in reader.records() {
         match result {
             Ok(record) => {
@@ -100,11 +97,9 @@ pub fn update_scs(ids: Vec<String>, csv:PathBuf, out_dir:PathBuf, pattern: Regex
                     .find_map(|val| pattern.find(val).map(|m| m.as_str().to_lowercase()))
                     .unwrap_or("".to_string());
 
-                println!("{}", id);
                 // if the id corresponds to a PDF, add the PDF link
                 if ids.contains(&(id.clone())) {
                     matched_lines += 1;
-                    println!("found: {} {}", pattern, id);
 
                     let link_index = 28;
                     let t = format!("{}.pdf", id);
@@ -150,7 +145,6 @@ pub fn generate_xml(ids: Vec<String>, pdf_path: PathBuf, pattern: Regex) -> Resu
     // add actual PDF links
     writer.write_event(Event::Start(BytesStart::new("content")))?;
     for id in ids {
-        println!("{}", id);
         let id_extensionless = pattern.find(&*id)
             .map(|m| m.as_str().to_lowercase())
             .unwrap_or_else(|| id.to_lowercase());

@@ -41,8 +41,10 @@ pub fn generate(pdf_path: PathBuf, csv_path: PathBuf, pattern: String, column: S
         name = "Import-Buchungsstapel.scs"
     }
 
+    println!("----{name}------");
     println!("Es wurden {} Buchungssätze gefunden, davon haben {} einen Beleglink!", total_lines, matched_lines);
     println!("Von den {} Pdfs, wurden bei {} eine Übereinstimmung mit dem Muster festgestellt!", pdfs_total, pdfs_matched);
+
     let csv_result_name = &export_path.join(name);
     let csv_result_path = Path::new(csv_result_name);
 

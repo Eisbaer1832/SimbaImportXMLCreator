@@ -7,12 +7,14 @@ pub mod generate;
 mod filter;
 pub mod profiles;
 pub mod pds_tools;
+mod test;
 
-use crate::profiles::get_profiles;
+use crate::profiles::{get_profiles};
 use crate::get_ids::get_pdf_ids;
 use crate::ui::ui;
-use clap::Parser;
+use clap::{Parser};
 use preferences::{AppInfo};
+use crate::generate::generate;
 
 const APP_INFO: AppInfo = AppInfo{name: "SimbaImportCreator", author: "Tino Brinker"};
 
@@ -27,6 +29,14 @@ struct Arguments {
     /// CSV file
     #[arg(short, long, default_value_t)]
     csv: String,
+
+    /// Profilname
+    #[arg(short, long, default_value_t)]
+    mdnt: String,
+
+    /// disable gui
+    #[arg(long, default_value_t)]
+    headless: bool,
 }
 
 
@@ -57,8 +67,19 @@ fn main() {
     let args = Arguments::parse();
     let pdf_directory = resolve_path(&args.directory);
     let csv_file = resolve_path(&args.csv);
-
+    let profile = args.mdnt;
     let profiles = get_profiles().expect("Could not get profiles");
 
-    ui(pdf_directory, csv_file, profiles);
+    if !args.headless {
+        // load ui for normal use
+        ui(pdf_directory.clone(), csv_file.clone(), profiles);
+    }else {
+        // run headless generation for testing
+        for p in profiles{
+            if p.name == profile {
+                generate(pdf_directory.parse().unwrap(), csv_file.parse().unwrap(), p.pattern, p.column);
+                continue
+            }
+        }
+    }
 }
